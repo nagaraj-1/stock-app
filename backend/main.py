@@ -3,11 +3,38 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi import WebSocket
 
 from threading import Thread
-
+from pathlib import Path
+import json
 import subprocess
 import asyncio
 
 app = FastAPI()
+
+BASE_DIR = Path(__file__).resolve().parent
+INVESTMENT_FILE = BASE_DIR / "invest.json"
+
+
+def load_investment_settings():
+    try:
+        if not INVESTMENT_FILE.exists():
+            return {}
+
+        with INVESTMENT_FILE.open("r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception as e:
+        print("INVESTMENT SETTINGS READ ERROR:", e)
+        return {}
+
+
+def save_investment_settings(settings: dict) -> bool:
+    try:
+        with INVESTMENT_FILE.open("w", encoding="utf-8") as f:
+            json.dump(settings, f, indent=2)
+        return True
+    except Exception as e:
+        print("INVESTMENT SETTINGS WRITE ERROR:", e)
+        return False
+
 
 # ==========================================
 # CORS
@@ -110,6 +137,36 @@ def home():
     return {
         "message":
             "Trading API Running"
+    }
+
+
+# ==========================================
+# INVESTMENT SETTINGS
+# ==========================================
+
+
+@app.get("/investment-settings")
+def get_investment_settings():
+    return load_investment_settings()
+
+
+@app.post("/investment-settings")
+def post_investment_settings(data: dict):
+    if not isinstance(data, dict):
+        return {
+            "status": "error",
+            "message": "Invalid payload, expected JSON object.",
+        }
+
+    if save_investment_settings(data):
+        return {
+            "status": "success",
+            "settings": data,
+        }
+
+    return {
+        "status": "error",
+        "message": "Unable to save investment settings.",
     }
 
 
