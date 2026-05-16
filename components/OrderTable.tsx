@@ -1,20 +1,24 @@
 "use client";
 
-import {
-  AnimatePresence,
-  motion,
-} from "framer-motion";
-
+import { AnimatePresence, motion } from "framer-motion";
 import {
   Clock3,
   Package2,
   IndianRupee,
+  Terminal,
+  Wifi,
+  Cpu,
+  Activity,
+  Trash2,
+  PlayCircle,
+  Ban,
+  TrendingDown,
+  ArrowUpRight,
 } from "lucide-react";
+import { useEffect, useState } from "react";
 
-import {
-  useEffect,
-  useState,
-} from "react";
+const API_PREFIX = "/api";
+const WS_URL = "wss://stock.eatoo.in/ws";
 
 export default function OrderTable({
   orders,
@@ -38,9 +42,7 @@ export default function OrderTable({
 
   useEffect(() => {
 
-    const ws = new WebSocket(
-      "ws://127.0.0.1:8000/ws"
-    );
+    const ws = new WebSocket(WS_URL);
     ws.onmessage = (event) => {
 
       console.log(
@@ -126,7 +128,7 @@ export default function OrderTable({
     try {
 
       const response = await fetch(
-        "http://127.0.0.1:8000/ai-order-tracking",
+        `${API_PREFIX}/ai-order-tracking`,
         {
           method: "POST",
 
@@ -181,7 +183,7 @@ export default function OrderTable({
       setLoading(true);
 
       const response = await fetch(
-        "http://127.0.0.1:8000/execute-order",
+        `${API_PREFIX}/execute-order`,
         {
           method: "POST",
 
@@ -242,7 +244,7 @@ export default function OrderTable({
     try {
 
       const response = await fetch(
-        "http://127.0.0.1:8000/stop-tracking",
+        `${API_PREFIX}/stop-tracking`,
         {
           method: "POST",
 
@@ -280,7 +282,7 @@ export default function OrderTable({
     try {
 
       const response = await fetch(
-        "http://127.0.0.1:8000/cancel-order",
+        `${API_PREFIX}/cancel-order`,
         {
           method: "POST",
 
@@ -360,148 +362,77 @@ export default function OrderTable({
                 opacity: 1,
               }}
               exit={{
-                scale: 0.9,
-                opacity: 0,
+              scale: 0.95,
+              opacity: 0, y: 20
               }}
-              className="w-full max-w-md rounded-[32px] bg-white p-6 shadow-2xl"
+            className="w-full max-w-md overflow-hidden rounded-[40px] bg-white shadow-2xl"
             >
-
-              <div className="flex items-center justify-between">
-
+            <div className="border-b border-slate-100 p-8 pb-6">
+              <div className="flex items-center gap-3">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-50 text-orange-600">
+                  <TrendingDown className="h-6 w-6" />
+                </div>
                 <div>
-
-                  <div className="text-3xl font-black text-slate-900">
-                    Sell Order
-                  </div>
-
-                  <div className="mt-1 text-sm text-slate-500">
-                    Confirm sell execution
-                  </div>
-
+                  <h3 className="text-2xl font-black text-slate-900">Execute Sell</h3>
+                  <p className="text-sm font-medium text-slate-500">Configure exit parameters</p>
                 </div>
-
+              </div>
               </div>
 
-              {/* SYMBOL */}
-
-              <div className="mt-6 rounded-2xl bg-slate-100 p-4">
-
-                <div className="text-xs text-slate-400">
-                  Symbol
+            <div className="p-8 space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="rounded-2xl bg-slate-50 p-4 border border-slate-100">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Asset</span>
+                  <div className="text-xl font-black text-slate-900">{sellPopup.symbol}</div>
                 </div>
-
-                <div className="mt-1 text-xl font-black">
-                  {sellPopup.symbol}
-                </div>
-
-              </div>
-
-              {/* INPUT */}
-
-              <div className="mt-5">
-
-                <div className="mb-2 text-sm font-semibold text-slate-600">
-                  Sell Amount
-                </div>
-
-                {/* SELL PERCENTAGE */}
-
-                <div className="mt-5">
-
-                  <div className="mb-2 text-sm font-semibold text-slate-600">
-                    Sell Percentage
-                  </div>
-
+                <div className="rounded-2xl bg-slate-50 p-4 border border-slate-100">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Exit %</span>
                   <input
                     type="number"
                     value={sellPercentage}
                     onChange={(e) => {
-
-                      const value =
-                        Number(e.target.value);
-
+                      const value = Number(e.target.value);
                       setSellPercentage(value);
-
-                      const currentPercentage =
-                        Number(
-                          sellPopup.percentage || 0
-                        );
-
-                      const amount = (
-                        (
-                          Number(sellPopup.price) /
-                          (
-                            1 +
-                            currentPercentage / 100
-                          )
-                        ) *
-                        (
-                          1 +
-                          value / 100
-                        )
-                      ).toFixed(2);
-
+                      const currentPercentage = Number(sellPopup.percentage || 0);
+                      const amount = ((Number(sellPopup.price) / (1 + currentPercentage / 100)) * (1 + value / 100)).toFixed(2);
                       setSellAmount(amount);
                     }}
-                    className="h-14 w-full rounded-2xl border border-slate-200 bg-white px-5 text-lg font-bold outline-none transition-all focus:border-blue-500"
+                    className="block w-full bg-transparent text-xl font-black text-blue-600 outline-none"
                   />
-
                 </div>
+              </div>
 
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Target Sell Price</label>
                 <div className="relative">
-
-                  <IndianRupee className="absolute left-4 top-4 h-5 w-5 text-slate-400" />
-
+                  <IndianRupee className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
                   <input
                     type="number"
                     value={sellAmount}
-                    onChange={(e) =>
-                      setSellAmount(
-                        e.target.value
-                      )
-                    }
-                    onFocus={(e) =>
-                      e.target.select()
-                    }
-                    className="h-14 w-full rounded-2xl border border-slate-200 bg-white pl-12 pr-4 text-lg font-bold outline-none transition-all focus:border-blue-500"
+                    onChange={(e) => setSellAmount(e.target.value)}
+                    onFocus={(e) => e.target.select()}
+                    className="h-16 w-full rounded-2xl border-2 border-slate-100 bg-slate-50 pl-11 pr-4 text-2xl font-black text-slate-900 outline-none transition-all focus:border-orange-500 focus:bg-white"
                   />
-
                 </div>
-
-                <div className="mt-2 text-xs text-slate-400">
-                  Default auto calculated 17.3%
-                </div>
-
               </div>
 
-              {/* BUTTONS */}
-
-              <div className="mt-7 flex gap-3">
-
+              <div className="flex gap-3 pt-2">
                 <button
-                  onClick={() =>
-                    setSellPopup(null)
-                  }
-                  className="h-14 flex-1 rounded-2xl bg-slate-200 font-bold text-slate-700 transition-all hover:bg-slate-300"
+                  onClick={() => setSellPopup(null)}
+                  className="h-16 flex-1 rounded-2xl font-bold text-slate-400 transition-all hover:text-slate-900"
                 >
                   Cancel
                 </button>
-
                 <button
                   onClick={sellOrder}
                   disabled={loading}
-                  className="h-14 flex-1 rounded-2xl bg-red-500 font-bold text-white transition-all hover:bg-red-600 disabled:opacity-50"
+                  className="h-16 flex-1 rounded-2xl bg-slate-900 font-bold text-white shadow-xl transition-all hover:bg-orange-600 active:scale-95 disabled:opacity-50"
                 >
-
-                  {loading
-                    ? "Processing..."
-                    : "Confirm Sell"}
-
+                  {loading ? "Processing..." : "Confirm Sell"}
                 </button>
-
               </div>
-
-            </motion.div>
+            </div>
+          </motion.div>
 
           </motion.div>
 
@@ -509,8 +440,46 @@ export default function OrderTable({
 
       </AnimatePresence>
       {/* ===================================== */}
-      {/* LIVE CONSOLE */}
+      {/* INTELLIGENCE STREAM */}
       {/* ===================================== */}
+      <div className="mb-10 overflow-hidden rounded-[40px] border border-slate-200 bg-white shadow-2xl">
+        <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/50 px-8 py-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-900 text-white">
+              <Terminal className="h-4 w-4" />
+            </div>
+            <h4 className="text-xs font-black uppercase tracking-[0.2em] text-slate-900">Intelligence Stream</h4>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-1.5 text-[10px] font-bold text-emerald-500">
+              <Wifi className="h-3 w-3" />
+              Live Feed
+            </div>
+            <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
+          </div>
+        </div>
+        
+        <div className="max-h-[280px] min-h-[120px] overflow-auto bg-slate-900 p-8 font-mono text-[11px] leading-relaxed">
+          {logs.length === 0 ? (
+            <div className="flex h-full flex-col items-center justify-center gap-3 opacity-20">
+              <Cpu className="h-10 w-10 text-white" />
+              <span className="font-bold text-white uppercase tracking-widest">Initializing Neural Core...</span>
+            </div>
+          ) : (
+            <div className="space-y-1.5">
+              {logs.map((log, index) => (
+                <div key={index} className="flex gap-4 border-l border-slate-800 pl-4 transition-colors hover:bg-white/5">
+                  <span className="text-slate-600 font-bold whitespace-nowrap">[{new Date().toLocaleTimeString()}]</span>
+                  <span className="text-blue-400/80 font-bold whitespace-nowrap">SYS.EXE</span>
+                  <span className={`${log.includes('Success') ? 'text-emerald-400' : log.includes('Error') ? 'text-red-400' : 'text-slate-300'}`}>
+                    {log}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
 
 
 
@@ -532,202 +501,77 @@ export default function OrderTable({
                   y: 10,
                 }}
                 animate={{
-                  opacity: 1,
-                  y: 0,
+                  opacity: 1, y: 0
                 }}
-                className="rounded-3xl border border-white/50 bg-white/90 p-5 shadow-xl backdrop-blur-xl"
+                className="overflow-hidden rounded-[32px] border border-slate-200 bg-white shadow-xl"
               >
-
-                {/* TOP */}
-
-                <div className="flex items-start justify-between">
-
+                <div className="bg-slate-50/50 p-6 border-b border-slate-100 flex items-center justify-between">
                   <div>
-
-                    <div className="text-lg font-black text-slate-900">
-                      {order.symbol}
-                    </div>
-
-                    <div className="mt-1 font-mono text-xs text-slate-500">
-                      {order.id}
-                    </div>
-
+                    <h3 className="text-xl font-black text-slate-900">{order.symbol}</h3>
+                    <span className="font-mono text-[10px] text-slate-400">{order.id}</span>
                   </div>
-
-                  <div
-                    className={`rounded-full px-3 py-1 text-xs font-bold ${order.status ===
-                      "Executed"
-                      ? "bg-emerald-100 text-emerald-600"
-                      : "bg-red-100 text-red-600"
-                      }`}
-                  >
-
+                  <div className={`flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-wider ${order.status === "Executed" ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-600"}`}>
+                    <div className={`h-1.5 w-1.5 rounded-full ${order.status === "Executed" ? "bg-emerald-500" : "bg-red-500"}`} />
                     {order.status}
-
                   </div>
-
                 </div>
 
-                {/* GRID */}
-
-                <div className="mt-5 grid grid-cols-2 gap-4">
-
-                  <div>
-
-                    <div className="text-xs text-slate-400">
-                      Qty
-                    </div>
-
-                    <div className="mt-1 flex items-center gap-2 font-bold text-blue-600">
-
-                      <Package2 className="h-4 w-4" />
-
-                      {order.qty}
-
-                    </div>
-
+                <div className="p-6 grid grid-cols-2 gap-y-6 gap-x-4">
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Value</span>
+                    <div className="text-base font-black text-slate-900">₹{order.price.toLocaleString()}</div>
                   </div>
-
-                  <div>
-
-                    <div className="text-xs text-slate-400">
-                      Amount
-                    </div>
-
-                    <div className="mt-1 font-bold">
-                      ₹{order.price}
-                    </div>
-
-                  </div>
-
-                  <div>
-
-                    <div className="text-xs text-slate-400">
-                      User
-                    </div>
-
-                    <div className="mt-1 font-semibold">
-                      {order.user}
-                    </div>
-
-                  </div>
-
-                  <div>
-
-                    <div className="text-xs text-slate-400">
-                      Platform
-                    </div>
-
-                    <div className="mt-1 font-semibold">
-                      {order.platform}
-                    </div>
-
-                  </div>
-
-                  <div>
-
-                    <div className="text-xs text-slate-400">
-                      %
-                    </div>
-
-                    <div
-                      className={`mt-1 font-bold ${Number(
-                        order.percentage
-                      ) >= 0
-                        ? "text-emerald-600"
-                        : "text-red-600"
-                        }`}
-                    >
-
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Perf %</span>
+                    <div className={`text-base font-black ${Number(order.percentage) >= 0 ? "text-emerald-500" : "text-red-500"}`}>
                       {order.percentage}%
-
                     </div>
-
                   </div>
-
-                  <div>
-
-                    <div className="text-xs text-slate-400">
-                      Time
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Execution</span>
+                    <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700">
+                      {order.user} <span className="text-slate-300">/</span> {order.platform}
                     </div>
-
-                    <div className="mt-1 flex items-center gap-2 text-sm">
-
-                      <Clock3 className="h-4 w-4" />
-
-                      {order.time}
-
-                    </div>
-
                   </div>
-
+                  <div className="space-y-1">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Quantity</span>
+                    <div className="inline-flex items-center rounded-lg bg-blue-50 px-2 py-0.5 text-xs font-black text-blue-700">
+                      {order.qty} Units
+                    </div>
+                  </div>
                 </div>
 
-                {/* BUTTONS */}
-
-                <div className="mt-5 grid grid-cols-4 gap-2">
-
-                  {/* AI MODE */}
-
+                <div className="grid grid-cols-4 border-t border-slate-100">
                   <button
-                    onClick={() =>
-                      aiTracking(order)
-                    }
-                    className="h-12 rounded-2xl bg-violet-600 text-xs font-bold text-white transition-all hover:bg-violet-700"
+                    onClick={() => aiTracking(order)}
+                    className="flex flex-col items-center justify-center py-4 text-[10px] font-bold text-violet-500 hover:bg-violet-50"
                   >
-                    AI Mode
+                    <PlayCircle className="h-5 w-5 mb-1" />
+                    AI
                   </button>
                   <button
-                    onClick={() =>
-                      stopTracking(
-                        order.id
-                      )
-                    }
-                    className="h-12 rounded-2xl bg-black text-xs font-bold text-white"
+                    onClick={() => stopTracking(order.id)}
+                    className="flex flex-col items-center justify-center py-4 text-[10px] font-bold text-slate-400 hover:bg-slate-50"
                   >
+                    <Ban className="h-5 w-5 mb-1" />
                     Stop
                   </button>
-
-                  {/* SELL */}
-
                   <button
-                    onClick={() =>
-                      openSellPopup(order)
-                    }
-                    className="h-12 rounded-2xl bg-orange-500 text-xs font-bold text-white transition-all hover:bg-orange-600"
+                    onClick={() => openSellPopup(order)}
+                    className="flex flex-col items-center justify-center py-4 text-[10px] font-bold text-orange-500 hover:bg-orange-50"
                   >
+                    <TrendingDown className="h-5 w-5 mb-1" />
                     Sell
                   </button>
-
-                  {/* CANCEL */}
-
                   <button
-                    onClick={() =>
-                      cancelOrder(
-                        order.id,
-                        order.platform
-                      )
-                    }
-                    disabled={
-                      order.status ===
-                      "Cancelled"
-                    }
-                    className={`h-12 rounded-2xl text-xs font-bold transition-all ${order.status ===
-                      "Cancelled"
-                      ? "cursor-not-allowed bg-slate-200 text-slate-400"
-                      : "bg-red-50 text-red-500 hover:bg-red-100"
-                      }`}
+                    onClick={() => cancelOrder(order.id, order.platform)}
+                    disabled={order.status === "Cancelled"}
+                    className="flex flex-col items-center justify-center py-4 text-[10px] font-bold text-red-400 hover:bg-red-50 disabled:opacity-30"
                   >
-
-                    {order.status ===
-                      "Cancelled"
-                      ? "Cancelled"
-                      : "Cancel"}
-
+                    <Trash2 className="h-5 w-5 mb-1" />
+                    Del
                   </button>
-
                 </div>
-
               </motion.div>
             )
           )}
@@ -739,247 +583,100 @@ export default function OrderTable({
       {/* ===================================== */}
       {/* DESKTOP TABLE */}
       {/* ===================================== */}
-
-      <div className="hidden overflow-hidden rounded-[32px] border border-white/50 bg-white/80 shadow-2xl backdrop-blur-xl lg:block">
-
-        <div className="max-h-[700px] overflow-auto">
-
+      <div className="hidden overflow-hidden rounded-[40px] border border-slate-200 bg-white shadow-2xl lg:block">
+        <div className="max-h-[600px] overflow-auto">
           <table className="w-full">
-
-            <thead className="sticky top-0 z-20 bg-white/95 backdrop-blur-xl">
-
-              <tr className="border-b border-slate-200 text-left text-sm font-semibold text-slate-500">
-
-                <th className="px-6 py-5">
-                  Order ID
-                </th>
-
-                <th className="px-6 py-5">
-                  Symbol
-                </th>
-
-                <th className="px-6 py-5">
-                  Qty
-                </th>
-
-                <th className="px-6 py-5">
-                  User
-                </th>
-
-                <th className="px-6 py-5">
-                  Platform
-                </th>
-
-                <th className="px-6 py-5">
-                  Amount
-                </th>
-
-                <th className="px-6 py-5">
-                  %
-                </th>
-
-                <th className="px-6 py-5">
-                  Time
-                </th>
-
-                <th className="px-6 py-5">
-                  Status
-                </th>
-
-                <th className="px-6 py-5">
-                  Action
-                </th>
-
+            <thead className="sticky top-0 z-20 bg-slate-50 border-b border-slate-100">
+              <tr className="text-left text-[11px] font-black uppercase tracking-[0.15em] text-slate-400">
+                <th className="px-8 py-5">Metadata</th>
+                <th className="px-6 py-5">Symbol</th>
+                <th className="px-6 py-5">Qty</th>
+                <th className="px-6 py-5 text-center">Execution</th>
+                <th className="px-6 py-5 text-right">Value</th>
+                <th className="px-6 py-5 text-center">Status</th>
+                <th className="px-8 py-5 text-right">Actions</th>
               </tr>
-
             </thead>
-
-            <tbody>
-
+            <tbody className="divide-y divide-slate-100">
               {orders.map(
                 (order: any) => (
-
-                  <tr
-                    key={order.id}
-                    className="border-b border-slate-100 hover:bg-slate-50"
-                  >
-
-                    <td className="px-6 py-5 font-mono text-sm font-bold">
-                      {order.id}
+                  <tr key={order.id} className="group transition-colors hover:bg-slate-50/50">
+                    <td className="px-8 py-5">
+                      <div className="flex flex-col">
+                        <span className="font-mono text-[10px] font-bold text-slate-400">{order.id}</span>
+                        <div className="flex items-center gap-1.5 text-xs font-bold text-slate-500">
+                          <Clock3 className="h-3 w-3" />
+                          {order.time}
+                        </div>
+                      </div>
                     </td>
-
-                    <td className="px-6 py-5 font-bold">
-                      {order.symbol}
-                    </td>
-
                     <td className="px-6 py-5">
-                      {order.qty}
+                      <div className="text-lg font-black text-slate-900">{order.symbol}</div>
                     </td>
-
                     <td className="px-6 py-5">
-                      {order.user}
+                      <div className="inline-flex items-center rounded-lg bg-blue-50 px-2.5 py-1 text-sm font-black text-blue-700">
+                        {order.qty}
+                      </div>
                     </td>
-
                     <td className="px-6 py-5">
-                      {order.platform}
+                      <div className="flex flex-col items-center">
+                        <span className="text-sm font-bold text-slate-700">{order.user}</span>
+                        <span className="text-[10px] font-black uppercase text-slate-400">{order.platform}</span>
+                      </div>
                     </td>
-
-                    <td className="px-6 py-5 font-bold">
-                      ₹{order.price}
+                    <td className="px-6 py-5 text-right">
+                      <div className="flex flex-col items-end">
+                        <span className="text-base font-black text-slate-900">₹{order.price.toLocaleString()}</span>
+                        <span className={`text-[11px] font-black ${Number(order.percentage) >= 0 ? "text-emerald-500" : "text-red-500"}`}>
+                          {Number(order.percentage) > 0 ? "+" : ""}{order.percentage}%
+                        </span>
+                      </div>
                     </td>
-
-                    <td
-                      className={`px-6 py-5 font-bold ${Number(
-                        order.percentage
-                      ) >= 0
-                        ? "text-emerald-600"
-                        : "text-red-600"
-                        }`}
-                    >
-
-                      {order.percentage}%
-
-                    </td>
-
-                    <td className="px-6 py-5">
-                      {order.time}
-                    </td>
-
-                    <td className="px-6 py-5">
-
-                      <div
-                        className={`inline-flex rounded-full px-4 py-2 text-sm font-bold ${order.status ===
-                          "Executed"
-                          ? "bg-emerald-100 text-emerald-600"
-                          : "bg-red-100 text-red-600"
-                          }`}
-                      >
-
+                    <td className="px-6 py-5 text-center">
+                      <div className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-wider ${order.status === "Executed" ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-600"}`}>
+                        <div className={`h-1.5 w-1.5 rounded-full ${order.status === 'Executed' ? 'bg-emerald-500' : 'bg-red-500'}`} />
                         {order.status}
-
                       </div>
-
                     </td>
-
-                    <td className="px-6 py-5">
-
-                      <div className="flex gap-2">
-
-                        {/* AI MODE */}
-
+                    <td className="px-8 py-5">
+                      <div className="flex justify-end gap-2">
                         <button
-                          onClick={() =>
-                            aiTracking(order)
-                          }
-                          className="rounded-xl bg-violet-600 px-4 py-2 text-sm font-bold text-white transition-all hover:bg-violet-700"
+                          onClick={() => aiTracking(order)}
+                          className="flex h-10 w-10 items-center justify-center rounded-xl bg-violet-50 text-violet-600 transition-colors hover:bg-violet-600 hover:text-white"
+                          title="AI Tracker"
                         >
-                          AI Mode
+                          <Activity className="h-4 w-4" />
                         </button>
-
                         <button
-                          onClick={() =>
-                            stopTracking(
-                              order.id
-                            )
-                          }
-                          className="rounded-xl bg-black px-4 py-2 text-sm font-bold text-white"
+                          onClick={() => stopTracking(order.id)}
+                          className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-600 transition-colors hover:bg-slate-900 hover:text-white"
+                          title="Stop Tracking"
                         >
-                          Stop
+                          <Ban className="h-4 w-4" />
                         </button>
-
-                        {/* SELL */}
-
                         <button
-                          onClick={() =>
-                            openSellPopup(order)
-                          }
-                          className="rounded-xl bg-orange-500 px-4 py-2 text-sm font-bold text-white transition-all hover:bg-orange-600"
+                          onClick={() => openSellPopup(order)}
+                          className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-50 text-orange-600 transition-colors hover:bg-orange-600 hover:text-white"
+                          title="Execute Sell"
                         >
-                          Sell
+                          <ArrowUpRight className="h-4 w-4" />
                         </button>
-
-                        {/* CANCEL */}
-
                         <button
-                          onClick={() =>
-                            cancelOrder(
-                              order.id,
-                              order.platform
-                            )
-                          }
-                          disabled={
-                            order.status ===
-                            "Cancelled"
-                          }
-                          className={`rounded-xl px-4 py-2 text-sm font-bold ${order.status ===
-                            "Cancelled"
-                            ? "cursor-not-allowed bg-slate-200 text-slate-400"
-                            : "bg-red-50 text-red-500 hover:bg-red-100"
-                            }`}
+                          onClick={() => cancelOrder(order.id, order.platform)}
+                          className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-50 text-red-500 transition-colors hover:bg-red-600 hover:text-white"
+                          title="Cancel Order"
                         >
-
-                          Cancel
-
+                          <Trash2 className="h-4 w-4" />
                         </button>
-
                       </div>
-
                     </td>
-
                   </tr>
                 )
               )}
 
             </tbody>
-
           </table>
-
-
-
         </div>
-
-
-
-      </div>
-      <div className="mb-6 rounded-[32px] bg-black p-5 shadow-2xl">
-
-        <div className="mb-4 flex items-center justify-between">
-
-          <div className="text-lg font-black text-white">
-            Live Console
-          </div>
-
-          <div className="h-3 w-3 animate-pulse rounded-full bg-green-500" />
-
-        </div>
-
-        <div className="max-h-[350px] overflow-auto rounded-2xl bg-black/40 p-4 font-mono text-xs text-green-400">
-
-          {logs.length === 0 ? (
-
-            <div className="text-slate-500">
-              Waiting for logs...
-            </div>
-
-          ) : (
-
-            logs.map(
-              (log, index) => (
-
-                <div
-                  key={index}
-                  className="mb-1"
-                >
-                  {log}
-                </div>
-
-              )
-            )
-
-          )}
-
-        </div>
-
       </div>
     </div>
   );

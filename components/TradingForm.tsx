@@ -1,339 +1,229 @@
 "use client";
 
-import { useState } from "react";
-
+import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
-
 import {
-    Loader2,
-    IndianRupee,
+  Loader2,
+  IndianRupee,
+  TrendingUp,
+  Activity,
+  Tag,
+  User,
+  Layout,
+  ChevronRight,
+  Wallet,
 } from "lucide-react";
-
 import SelectBox from "./SelectBox";
 import PlatformSelect from "./PlatformSelect";
+import { users, platforms } from "@/data/constants";
 
-import {
-    users,
-    platforms,
-} from "@/data/constants";
+const API_PREFIX = "/api";
 
 export default function TradingForm({
     setOrders,
     investmentSettings,
 }: any) {
-    const [symbol, setSymbol] =
-        useState("RELIANCE");
+  const [symbol, setSymbol] = useState("RELIANCE");
+  const [price, setPrice] = useState(10);
+  const [percentage, setPercentage] = useState(16);
+  const [selectedUser, setSelectedUser] = useState("NAG");
+  const [selectedPlatform, setSelectedPlatform] = useState("Groww");
+  const [loading, setLoading] = useState(false);
 
-    const [price, setPrice] =
-        useState(2450);
+  // ====================================
+  // LIVE CALCULATIONS
+  // ====================================
+  const tradeSummary = useMemo(() => {
+    const targetPercentage = 15.51;
+    const amount = investmentSettings[`${selectedUser}-${selectedPlatform}`] ?? 0;
+    const finalPrice = Number(((price / (1 + percentage / 100)) * (1 + targetPercentage / 100)).toFixed(2));
+    const qty = Math.floor(amount / (finalPrice / 5));
 
-    const [percentage, setPercentage] =
-        useState(16);
+    return { amount, finalPrice, qty, targetPercentage };
+  }, [price, percentage, selectedUser, selectedPlatform, investmentSettings]);
 
-    const [selectedUser, setSelectedUser] =
-        useState("Alex");
+  /* =========================
+     EXECUTE ORDER
+  ========================= */
 
-    const [
-        selectedPlatform,
-        setSelectedPlatform,
-    ] = useState("Groww");
+  const executeOrder = async () => {
+    try {
+      setLoading(true);
 
-    const [loading, setLoading] =
-        useState(false);
+      const { amount, finalPrice, qty, targetPercentage } = tradeSummary;
 
-    /* =========================
-       EXECUTE ORDER
-    ========================= */
+      const response = await fetch(`${API_PREFIX}/execute-order`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          action: "BUY",
+          symbol,
+          qty,
+          price: Number(finalPrice.toFixed(2)),
+          platform: selectedPlatform,
+        }),
+      });
 
-    const executeOrder = async () => {
-        try {
+      const data = await response.json();
+      const backendOrderId = data.order_id || `ORD-${Math.floor(Math.random() * 999999)}`;
+      const now = new Date();
 
-            setLoading(true);
+      const order = {
+        id: backendOrderId,
+        symbol,
+        qty,
+        price: Number(finalPrice.toFixed(2)),
+        finalPrice: Number(finalPrice.toFixed(2)),
+        user: selectedUser,
+        platform: selectedPlatform,
+        amount,
+        percentage: Number(targetPercentage.toFixed(2)),
+        status: "Executed",
+        date: now.toLocaleDateString(),
+        time: now.toLocaleTimeString(),
+      };
 
-            // ====================================
-            // INVESTMENT
-            // ====================================
-
-            const amount =
-                investmentSettings[
-                `${selectedUser}-${selectedPlatform}`
-                ];
-
-            // ====================================
-            // BROKERAGE
-            // ====================================
-            const targetPercentage = 15.51;
-
-            const finalPrice = Number(
-                (
-                    (price / (1 + percentage / 100)) *
-                    (1 + targetPercentage / 100)
-                ).toFixed(2)
-            );
-
-            console.log(finalPrice);
-
-            // ====================================
-            // QTY
-            // ====================================
-
-            const qty = Math.floor(
-                amount / (finalPrice / 5)
-            );
-
-            console.log("==========");
-
-            console.log("SYMBOL:", symbol);
-
-            console.log("PRICE:", price);
-
-            console.log(
-                "FINAL PRICE:",
-                finalPrice
-            );
-
-            console.log("QTY:", qty);
-
-            console.log("==========");
-
-            // ====================================
-            // PLACE ORDER API
-            // ====================================
-
-            const response = await fetch(
-                "http://127.0.0.1:8000/execute-order",
-                {
-                    method: "POST",
-
-                    headers: {
-                        "Content-Type":
-                            "application/json",
-                    },
-
-                    body: JSON.stringify({
-                        action: "BUY",
-
-                        symbol,
-
-                        qty,
-
-                        price: Number(
-                            finalPrice.toFixed(2)
-                        ),
-
-                        platform:
-                            selectedPlatform,
-                    }),
-                }
-            );
-
-            const data =
-                await response.json();
-
-            console.log(data);
-
-            // ====================================
-            // ORDER ID
-            // ====================================
-
-            const backendOrderId =
-                data.order_id ||
-                `ORD-${Math.floor(
-                    Math.random() * 999999
-                )}`;
-
-            // ====================================
-            // DATE TIME
-            // ====================================
-
-            const now = new Date();
-
-            // ====================================
-            // FRONTEND ORDER
-            // ====================================
-
-            const order = {
-                id: backendOrderId,
-
-                symbol,
-
-                qty,
-
-                price: Number(finalPrice.toFixed(2)),
-
-                finalPrice: Number(
-                    finalPrice.toFixed(2)
-                ),
-
-                user: selectedUser,
-
-                platform: selectedPlatform,
-
-                amount,
-
-                percentage:
-                    targetPercentage.toFixed(2),
-
-                status: "Executed",
-
-                date:
-                    now.toLocaleDateString(),
-
-                time:
-                    now.toLocaleTimeString(),
-            };
-
-            // ====================================
-            // UPDATE UI
-            // ====================================
-
-            setOrders((prev: any) => [
-                order,
-                ...prev,
-            ]);
-
-            setLoading(false);
-
-        } catch (error) {
-
-            console.error(error);
-
-            setLoading(false);
-        }
-    };
+      setOrders((prev: any) => [order, ...prev]);
+      setLoading(false);
+    } catch (error) {
+      console.error(error);
+      setLoading(false);
+    }
+  };
 
     return (
-        <motion.div
-            initial={{
-                opacity: 0,
-                y: 10,
-            }}
-            animate={{
-                opacity: 1,
-                y: 0,
-            }}
-            className="rounded-[32px] border border-white/50 bg-white/80 p-6 shadow-2xl backdrop-blur-xl"
-        >
-            {/* GRID */}
-            <div className="grid gap-6 lg:grid-cols-5">
-                {/* SYMBOL */}
-                <div>
-                    <label className="mb-2 block text-sm font-medium text-slate-500">
-                        Trading Symbol
-                    </label>
+      <motion.div
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="overflow-hidden rounded-[40px] border border-slate-200 bg-white shadow-2xl"
+      >
+        <div className="flex flex-col lg:flex-row">
+          {/* Left Side: Form */}
+          <div className="flex-1 p-6 md:p-10 space-y-8">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-white shadow-lg shadow-blue-200">
+                <TrendingUp className="h-5 w-5" />
+              </div>
+              <h2 className="text-2xl font-black text-slate-900">Trade Setup</h2>
+            </div>
 
-                    <input
-                        value={symbol}
-                        onClick={(e) =>
-                            e.currentTarget.select()
-                        }
-                        onFocus={(e) =>
-                            e.currentTarget.select()
-                        }
-                        onChange={(e) =>
-                            setSymbol(
-                                e.target.value.toUpperCase()
-                            )
-                        }
-                        className="h-14 w-full rounded-2xl border border-slate-200 bg-white px-5 text-lg font-semibold outline-none transition-all duration-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20"
-                    />
+            <div className="grid gap-8">
+              {/* Row 1: Asset Details */}
+              <section className="space-y-4">
+                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-slate-400">
+                  <Tag className="h-3 w-3" />
+                  Asset Details
                 </div>
-
-                {/* PRICE */}
-                <div>
-                    <label className="mb-2 block text-sm font-medium text-slate-500">
-                        Current Price
-                    </label>
-
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <div>
+                    <label className="mb-2 block text-xs font-bold text-slate-500 uppercase">Symbol</label>
+                    <input
+                      value={symbol}
+                      onChange={(e) => setSymbol(e.target.value.toUpperCase())}
+                      onFocus={(e) => e.target.select()}
+                      className="h-14 w-full rounded-2xl border-2 border-slate-100 bg-slate-50 px-5 text-lg font-black text-slate-900 outline-none transition-all focus:border-blue-500 focus:bg-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-2 block text-xs font-bold text-slate-500 uppercase">Price</label>
                     <div className="relative">
-                        <IndianRupee className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
-
-                        <input
-                            type="number"
-                            value={price}
-                            onClick={(e) =>
-                                e.currentTarget.select()
-                            }
-                            onFocus={(e) =>
-                                e.currentTarget.select()
-                            }
-                            onChange={(e) =>
-                                setPrice(
-                                    Number(e.target.value)
-                                )
-                            }
-                            className="h-14 w-full rounded-2xl border border-slate-200 bg-white pl-12 pr-5 text-lg font-bold outline-none transition-all duration-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20"
-                        />
-                    </div>
-                </div>
-
-                {/* PERCENTAGE */}
-                <div>
-                    <label className="mb-2 block text-sm font-medium text-slate-500">
-                        Current %
-                    </label>
-
-                    <input
+                      <IndianRupee className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
+                      <input
                         type="number"
-                        value={percentage}
-                        onClick={(e) =>
-                            e.currentTarget.select()
-                        }
-                        onFocus={(e) =>
-                            e.currentTarget.select()
-                        }
-                        onChange={(e) =>
-                            setPercentage(
-                                Number(e.target.value)
-                            )
-                        }
-                        className={`h-14 w-full rounded-2xl border px-5 text-lg font-bold outline-none transition-all duration-300 focus:ring-4 ${percentage >= 0
-                            ? "border-emerald-300 bg-emerald-50 text-emerald-600 focus:ring-emerald-500/20"
-                            : "border-red-300 bg-red-50 text-red-600 focus:ring-red-500/20"
-                            }`}
+                        value={price}
+                        onChange={(e) => setPrice(Number(e.target.value))}
+                        onFocus={(e) => e.target.select()}
+                        className="h-14 w-full rounded-2xl border-2 border-slate-100 bg-slate-50 pl-11 pr-4 text-lg font-black text-slate-900 outline-none transition-all focus:border-blue-500 focus:bg-white"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="mb-2 block text-xs font-bold text-slate-500 uppercase">Offset %</label>
+                    <input
+                      type="number"
+                      value={percentage}
+                      onChange={(e) => setPercentage(Number(e.target.value))}
+                      onFocus={(e) => e.target.select()}
+                      className={`h-14 w-full rounded-2xl border-2 px-5 text-lg font-black outline-none transition-all focus:bg-white ${
+                        percentage >= 0
+                          ? "border-emerald-100 bg-emerald-50/50 text-emerald-600 focus:border-emerald-500"
+                          : "border-red-100 bg-red-50/50 text-red-600 focus:border-red-500"
+                      }`}
                     />
+                  </div>
+                </div>
+              </section>
+
+              {/* Row 2: Account Details */}
+              <section className="space-y-4">
+                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-slate-400">
+                  <Activity className="h-3 w-3" />
+                  Execution Source
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <SelectBox label="User" value={selectedUser} options={users} onChange={setSelectedUser} />
+                  <PlatformSelect label="Platform" value={selectedPlatform} options={platforms} onChange={setSelectedPlatform} />
+                </div>
+              </section>
+            </div>
+          </div>
+
+          {/* Right Side: Summary Card */}
+          <div className="w-full lg:w-[380px] bg-slate-50 border-t lg:border-t-0 lg:border-l border-slate-100 p-6 md:p-10 flex flex-col justify-between">
+            <div className="space-y-6">
+              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-slate-400">
+                <Layout className="h-3 w-3" />
+                Trade Summary
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 rounded-2xl bg-white border border-slate-200">
+                  <div className="text-sm font-bold text-slate-500">Budget</div>
+                  <div className="text-lg font-black text-slate-900">₹{tradeSummary.amount.toLocaleString()}</div>
                 </div>
 
-                {/* USER */}
-                <SelectBox
-                    label="Select User"
-                    value={selectedUser}
-                    options={users}
-                    onChange={setSelectedUser}
-                />
+                <div className="flex items-center justify-between p-4 rounded-2xl bg-white border border-slate-200">
+                  <div className="text-sm font-bold text-slate-500">Target Price</div>
+                  <div className="text-lg font-black text-blue-600">₹{tradeSummary.finalPrice}</div>
+                </div>
 
-                {/* PLATFORM */}
-                <PlatformSelect
-                    label="Select Platform"
-                    value={selectedPlatform}
-                    options={platforms}
-                    onChange={setSelectedPlatform}
-                />
+                <div className="relative overflow-hidden p-6 rounded-3xl bg-slate-900 text-white shadow-xl">
+                  <div className="relative z-10">
+                    <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Buy Quantity</div>
+                    <div className="text-4xl font-black">{tradeSummary.qty}</div>
+                  </div>
+                  <div className="absolute -right-4 -bottom-4 text-white/5">
+                    <TrendingUp className="h-32 w-32" />
+                  </div>
+                </div>
+              </div>
             </div>
 
-            {/* BUTTON */}
-            <div className="mt-6">
-                <motion.button
-                    whileHover={{
-                        scale: 1.02,
-                    }}
-                    whileTap={{
-                        scale: 0.96,
-                    }}
-                    onClick={executeOrder}
-                    disabled={loading}
-                    className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-lg font-bold text-white shadow-xl transition-all"
-                >
-                    {loading ? (
-                        <>
-                            <Loader2 className="h-5 w-5 animate-spin" />
-                            Executing
-                        </>
-                    ) : (
-                        "Execute Order"
-                    )}
-                </motion.button>
+            <div className="mt-8 pt-8 border-t border-slate-200">
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={executeOrder}
+                disabled={loading}
+                className="group relative flex h-16 w-full items-center justify-center gap-3 rounded-2xl bg-blue-600 text-xl font-black text-white shadow-2xl shadow-blue-500/30 transition-all hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? (
+                  <Loader2 className="h-6 w-6 animate-spin" />
+                ) : (
+                  <>
+                    Execute Order
+                    <ChevronRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+                  </>
+                )}
+              </motion.button>
+              <p className="mt-4 text-center text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                Final calculation includes 15.51% brokerage
+              </p>
             </div>
-        </motion.div>
+          </div>
+        </div>
+      </motion.div>
     );
 }

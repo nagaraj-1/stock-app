@@ -1,46 +1,77 @@
 "use client";
 
-import { useState } from "react";
-
-import Header from "@/components/Header";
+import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
+import { Settings } from "lucide-react";
 import TradingForm from "@/components/TradingForm";
 import OrderTable from "@/components/OrderTable";
 import SettingsModal from "@/components/SettingsModal";
 
 import { Order } from "@/types/order";
 
+const INVESTMENT_SETTINGS_URL = "/api/investment-settings";
+
 export default function Home() {
-  const [showSettings, setShowSettings] =
-    useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [investmentSettings, setInvestmentSettings] = useState<Record<string, number>>({});
+  const [isSettingsLoading, setIsSettingsLoading] = useState(true);
 
-  const [orders, setOrders] = useState<
-    Order[]
-  >([]);
+  useEffect(() => {
+    const loadInvestmentSettings = async () => {
+      if (typeof window === "undefined") return;
 
-  const [
-    investmentSettings,
-    setInvestmentSettings,
-  ] = useState<Record<string, number>>({
-    "Alex-Groww": 1500,
-    "Alex-Kite": 3000,
-    "Alex-AngelOne": 2000,
+      try {
+        const response = await fetch(INVESTMENT_SETTINGS_URL);
+        if (!response.ok) {
+          console.warn("Unable to load investment settings from API:", response.statusText);
+          return;
+        }
 
-    "Peter-Groww": 5000,
-    "Peter-Kite": 7000,
-    "Peter-AngelOne": 4000,
+        const json = await response.json();
+        setInvestmentSettings(json);
+      } catch (error) {
+        console.warn("Unable to load investment settings from API:", error);
+      } finally {
+        setIsSettingsLoading(false);
+      }
+    };
 
-    "John-Groww": 10000,
-    "John-Kite": 15000,
-    "John-AngelOne": 12000,
-  });
+    loadInvestmentSettings();
+  }, []);
+
+  const saveInvestmentSettings = async (nextSettings: Record<string, number>) => {
+    try {
+      const response = await fetch(INVESTMENT_SETTINGS_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(nextSettings),
+      });
+
+      const data = await response.json();
+      if (!response.ok || data.status === "error") {
+        console.warn("Unable to save investment settings to API:", data.message || response.statusText);
+        return;
+      }
+
+      setInvestmentSettings(nextSettings);
+    } catch (error) {
+      console.warn("Unable to save investment settings to API:", error);
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-slate-100 p-4 md:p-8">
-      <Header
-        onSettings={() =>
-          setShowSettings(true)
-        }
-      />
+    <div className="relative min-h-screen bg-slate-100 p-4 md:p-8">
+      <motion.button
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        onClick={() => setShowSettings(true)}
+        className="fixed right-6 top-6 z-50 flex h-14 w-14 items-center justify-center rounded-2xl bg-white shadow-xl"
+      >
+        <Settings className="h-6 w-6 text-slate-900" />
+      </motion.button>
 
       <TradingForm
         setOrders={setOrders}
@@ -56,15 +87,9 @@ export default function Home() {
 
       <SettingsModal
         open={showSettings}
-        onClose={() =>
-          setShowSettings(false)
-        }
-        investmentSettings={
-          investmentSettings
-        }
-        setInvestmentSettings={
-          setInvestmentSettings
-        }
+        onClose={() => setShowSettings(false)}
+        investmentSettings={investmentSettings}
+        onSave={saveInvestmentSettings}
       />
     </div>
   );

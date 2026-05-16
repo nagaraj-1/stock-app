@@ -1,6 +1,6 @@
 export const users = [
-  "Alex",
-  "Peter",
+  "NAG",
+  "CUTIE",
 ];
 
 export const platforms = [

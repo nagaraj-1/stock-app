@@ -28,13 +28,13 @@ export default function PlatformSelect({
 
   return (
     <div className="relative">
-      <label className="mb-2 block text-sm text-slate-500">
+      <label className="mb-2 block text-sm text-slate-700">
         {label}
       </label>
 
       <button
         onClick={() => setOpen(!open)}
-        className="flex h-14 w-full items-center justify-between rounded-2xl bg-white px-5 shadow-lg"
+        className="flex h-14 w-full items-center justify-between rounded-2xl bg-white px-5 text-slate-900 shadow-lg"
       >
         <div className="flex items-center gap-2">
           <span>
@@ -81,7 +81,7 @@ export default function PlatformSelect({
                   onChange(option.name);
                   setOpen(false);
                 }}
-                className="flex h-14 w-full items-center gap-2 px-5 hover:bg-slate-100"
+                className="flex h-14 w-full items-center gap-2 px-5 text-slate-900 hover:bg-slate-100"
               >
                 <span>{option.icon}</span>
 

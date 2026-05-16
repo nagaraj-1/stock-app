@@ -25,13 +25,13 @@ export default function SelectBox({
 
   return (
     <div className="relative">
-      <label className="mb-2 block text-sm text-slate-500">
+      <label className="mb-2 block text-sm text-slate-700">
         {label}
       </label>
 
       <button
         onClick={() => setOpen(!open)}
-        className="flex h-14 w-full items-center justify-between rounded-2xl bg-white px-5 shadow-lg"
+        className="flex h-14 w-full items-center justify-between rounded-2xl bg-white px-5 text-slate-900 shadow-lg"
       >
         <span>{value}</span>
 
@@ -68,7 +68,7 @@ export default function SelectBox({
                   onChange(option);
                   setOpen(false);
                 }}
-                className="flex h-14 w-full items-center px-5 hover:bg-slate-100"
+                className="flex h-14 w-full items-center px-5 text-slate-900 hover:bg-slate-100"
               >
                 {option}
               </button>
