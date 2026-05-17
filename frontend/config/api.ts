@@ -22,4 +22,4 @@ export const INVESTMENT_SETTINGS_URL =
 
 export const WS_URL =
   process.env.NEXT_PUBLIC_WS_URL?.trim() ||
-  "ws://stock.eatoo.in/ws";
+  "ws://127.0.0.1:8000/ws";
