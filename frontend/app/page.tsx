@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { Settings } from "lucide-react";
 import TradingForm from "@/components/TradingForm";
@@ -63,14 +64,25 @@ export default function Home() {
 
   return (
     <div className="relative min-h-screen bg-slate-100 p-4 md:p-8">
-      <motion.button
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-        onClick={() => setShowSettings(true)}
-        className="fixed right-6 top-6 z-50 flex h-14 w-14 items-center justify-center rounded-2xl bg-white shadow-xl"
-      >
-        <Settings className="h-6 w-6 text-slate-900" />
-      </motion.button>
+      <div className="fixed right-6 top-6 z-50 flex flex-col gap-3">
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={() => setShowSettings(true)}
+          className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white shadow-xl"
+        >
+          <Settings className="h-6 w-6 text-slate-900" />
+        </motion.button>
+        <motion.div
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white shadow-xl"
+        >
+          <Link href="/credentials" className="flex h-full w-full items-center justify-center text-slate-900">
+            <span className="text-lg font-black">C</span>
+          </Link>
+        </motion.div>
+      </div>
 
       <TradingForm
         setOrders={setOrders}
