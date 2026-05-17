@@ -331,7 +331,7 @@ def execute_order(data: dict):
 
         elif platform == "Groww":
 
-            script_name = "grow-"+user+".py"
+            script_name = "grow.py"
 
         else:
 
