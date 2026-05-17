@@ -158,9 +158,20 @@ export default function TradingForm({
       setScriptLoading(true);
       setScriptError("");
       setScriptRows([]);
+      setScriptHeaders([]);
 
       const response = await fetch(`${API_PREFIX}/playwright-script`);
-      const data = await response.json();
+      const contentType = response.headers.get("content-type") || "";
+      let data: any = null;
+
+      if (contentType.includes("application/json")) {
+        data = await response.json();
+      } else {
+        const body = await response.text();
+        throw new Error(
+          `Invalid JSON response from server: ${body.slice(0, 300)}`
+        );
+      }
 
       if (!response.ok || data.status !== "success") {
         throw new Error(data.message || "Playwright script failed");
@@ -170,7 +181,11 @@ export default function TradingForm({
       setScriptRows(Array.isArray(data.rows) ? data.rows : []);
     } catch (error) {
       console.error(error);
-      setScriptError(error instanceof Error ? error.message : "Playwright script failed");
+      setScriptError(
+        error instanceof Error
+          ? error.message
+          : "Playwright script failed"
+      );
     } finally {
       setScriptLoading(false);
     }
