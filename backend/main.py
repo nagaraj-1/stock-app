@@ -1,17 +1,21 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi import WebSocket
 
 from threading import Thread
 from pathlib import Path
 import json
 import subprocess
 import asyncio
+from kiteconnect import KiteConnect
+from credentials import load_credentials, save_credentials
 
 app = FastAPI()
 
 BASE_DIR = Path(__file__).resolve().parent
 INVESTMENT_FILE = BASE_DIR / "invest.json"
+ACCESS_TOKEN_FILE = BASE_DIR / "access_token.txt"
+KITE_API_KEY = "gy6zhrcj24q331y0"
+KITE_API_SECRET = "zwyo86ur9opg5jrd98ajnjypyls5ad2q"
 
 
 def load_investment_settings():
@@ -171,6 +175,73 @@ def post_investment_settings(data: dict):
 
 
 # ==========================================
+# CREDENTIALS STORAGE
+# ==========================================
+
+@app.get("/save-credentials")
+def save_creds(user: str, api_key: str, secret: str):
+    if not user or not api_key or not secret:
+        raise HTTPException(
+            status_code=400,
+            detail="user, api_key, and secret query parameters are required.",
+        )
+
+    user_key = user.strip().upper()
+    credentials = load_credentials()
+    credentials[user_key] = {
+        "api_key": api_key,
+        "secret": secret,
+    }
+
+    if not save_credentials(credentials):
+        raise HTTPException(
+            status_code=500,
+            detail="Unable to save credentials.",
+        )
+
+    return {
+        "status": "success",
+        "message": f"Credentials saved for {user_key}.",
+        "user": user_key,
+    }
+
+
+# ==========================================
+# KITE AUTH TOKEN SAVE
+# ==========================================
+
+@app.get("/kiteAuthTokenSave")
+def kite_auth_token_save(request_token: str):
+    try:
+        
+        kite = KiteConnect(api_key=KITE_API_KEY)
+
+        data = kite.generate_session(
+        request_token,
+        api_secret=KITE_API_SECRET
+        )
+
+        access_token = data["access_token"]
+
+        print("\nACCESS TOKEN:")
+        print(access_token)
+
+        with open("access_token.txt", "w") as f:
+            f.write(access_token)
+
+        return {
+            "status": "success",
+            "message": "Request token and access token saved.",
+            "request_token": request_token,
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        )
+
+# ==========================================
 # RUN LIVE PROCESS
 # ==========================================
 
@@ -228,6 +299,8 @@ def execute_order(data: dict):
 
         platform = data["platform"]
 
+        user = data["user"]
+
         print(
             "\n========== NEW ORDER =========="
         )
@@ -254,11 +327,11 @@ def execute_order(data: dict):
 
         elif platform == "Kite":
 
-            script_name = "kite_buy.py"
+            script_name = "kite.py"
 
         elif platform == "Groww":
 
-            script_name = "grow.py"
+            script_name = "grow-"+user+".py"
 
         else:
 
@@ -360,7 +433,7 @@ def cancel_order(data: dict):
 
         elif platform == "Kite":
 
-            script_name = "kite_buy.py"
+            script_name = "kite.py"
 
         elif platform == "Groww":
 
@@ -415,6 +488,7 @@ def run_ai_process(
     qty,
     price,
     order_id,
+    user,
 ):
 
     global running_processes
@@ -428,6 +502,7 @@ def run_ai_process(
             qty,
             price,
             order_id,
+            user,
         ],
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
@@ -487,6 +562,8 @@ async def ai_order_tracking(
 
         platform = data["platform"]
 
+        user = data.get("user", "")
+
         script_name = ""
 
         if platform == "AngelOne":
@@ -498,13 +575,13 @@ async def ai_order_tracking(
         elif platform == "Kite":
 
             script_name = (
-                "kite_buy.py"
+                "kite-ai.py"
             )
 
         elif platform == "Groww":
 
             script_name = (
-                "grow.py"
+                "grow-ai.py"
             )
 
         else:
@@ -527,6 +604,7 @@ async def ai_order_tracking(
                 qty,
                 price,
                 order_id,
+                user,
             ),
             daemon=True,
         ).start()

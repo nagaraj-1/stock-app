@@ -2,6 +2,7 @@ import requests
 from growwapi import GrowwAPI
 import pyotp
 import sys
+from credentials import get_groww_credentials
 
 from datetime import datetime
 
@@ -14,8 +15,14 @@ order_reference_id = "SLM" + datetime.now().strftime("%Y%m%d%H%M%S")
 # ==========================================
 # API
 # ==========================================
-API_KEY = "eyJraWQiOiJaTUtjVXciLCJhbGciOiJFUzI1NiJ9.eyJleHAiOjI1NjczMzE1OTQsImlhdCI6MTc3ODkzMTU5NCwibmJmIjoxNzc4OTMxNTk0LCJzdWIiOiJ7XCJ0b2tlblJlZklkXCI6XCJjNjFhNDM1Ny0yOGU0LTQzNjEtYTBkYS0xZjgzNWFjODM1ZWJcIixcInZlbmRvckludGVncmF0aW9uS2V5XCI6XCJlMzFmZjIzYjA4NmI0MDZjODg3NGIyZjZkODQ5NTMxM1wiLFwidXNlckFjY291bnRJZFwiOlwiY2U2YjJiMjUtMjIyZC00NDIzLThmNmQtNDQ1OGM4ZTYwOWJkXCIsXCJkZXZpY2VJZFwiOlwiMWEzODVmMDItNTZjOS01ZDFlLTk0NDMtZmZlZmVmMjZlMTJiXCIsXCJzZXNzaW9uSWRcIjpcIjYyZTM3NDgyLTY2YTYtNGE2MS04MWYzLWYyZDE5NWJjNGNiOFwiLFwiYWRkaXRpb25hbERhdGFcIjpcIno1NC9NZzltdjE2WXdmb0gvS0EwYkVPVm9GMW9LQkZmN0lwdEpsRW1zcWxSTkczdTlLa2pWZDNoWjU1ZStNZERhWXBOVi9UOUxIRmtQejFFQisybTdRPT1cIixcInJvbGVcIjpcImF1dGgtdG90cFwiLFwic291cmNlSXBBZGRyZXNzXCI6XCIxMjIuMTY1LjIwOC4xNDksMTcyLjY5LjEyOS4xOTksMzUuMjQxLjIzLjEyM1wiLFwidHdvRmFFeHBpcnlUc1wiOjI1NjczMzE1OTQyNjEsXCJ2ZW5kb3JOYW1lXCI6XCJncm93d0FwaVwifSIsImlzcyI6ImFwZXgtYXV0aC1wcm9kLWFwcCJ9.ed6V9NSBHNQYQ3kAjWkaQZ7C_8rvTeLQgJ7pJjiwQt79CKamG44Jhz1P_EBXNQKRpVMUCsA02rDBLjJXtt1Szg"
-API_SECRET = "3XCi&I3hax3hSqD#h4MREur^ah)s@8!m"
+if len(sys.argv) < 6:
+    raise RuntimeError("Usage: python3 grow.py ACTION SYMBOL QTY PRICE USER")
+
+API_USER = sys.argv[5].strip().upper()
+API_KEY, API_SECRET = get_groww_credentials(API_USER)
+
+if not API_KEY or not API_SECRET:
+    raise RuntimeError(f"Missing Groww credentials for user {API_USER}. Save them in credentials.json or via /save-credentials.")
 
 
 # ==========================================

@@ -16,9 +16,7 @@ import {
   ArrowUpRight,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-
-const API_PREFIX = "/api";
-const WS_URL = "wss://stock.eatoo.in/ws";
+import { API_PREFIX, WS_URL } from "@/config/api";
 
 export default function OrderTable({
   orders,
@@ -152,6 +150,9 @@ export default function OrderTable({
 
             platform:
               order.platform,
+
+            user:
+              order.user,
           }),
         }
       );

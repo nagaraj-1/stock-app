@@ -8,8 +8,7 @@ import OrderTable from "@/components/OrderTable";
 import SettingsModal from "@/components/SettingsModal";
 
 import { Order } from "@/types/order";
-
-const INVESTMENT_SETTINGS_URL = "/api/investment-settings";
+import { INVESTMENT_SETTINGS_URL } from "@/config/api";
 
 export default function Home() {
   const [showSettings, setShowSettings] = useState(false);

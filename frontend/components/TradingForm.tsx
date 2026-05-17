@@ -16,8 +16,7 @@ import {
 import SelectBox from "./SelectBox";
 import PlatformSelect from "./PlatformSelect";
 import { users, platforms } from "@/data/constants";
-
-const API_PREFIX = "/api";
+import { API_PREFIX } from "@/config/api";
 
 export default function TradingForm({
     setOrders,
@@ -36,7 +35,12 @@ export default function TradingForm({
   const tradeSummary = useMemo(() => {
     const targetPercentage = 15.51;
     const amount = investmentSettings[`${selectedUser}-${selectedPlatform}`] ?? 0;
-    const finalPrice = Number(((price / (1 + percentage / 100)) * (1 + targetPercentage / 100)).toFixed(2));
+    const finalPrice = Number(
+  (Math.round(
+    (((price / (1 + percentage / 100)) *
+      (1 + targetPercentage / 100)) / 0.10)
+  ) * 0.10).toFixed(2)
+);
     const qty = Math.floor(amount / (finalPrice / 5));
 
     return { amount, finalPrice, qty, targetPercentage };
@@ -63,6 +67,7 @@ export default function TradingForm({
           qty,
           price: Number(finalPrice.toFixed(2)),
           platform: selectedPlatform,
+          user: selectedUser,
         }),
       });
 
