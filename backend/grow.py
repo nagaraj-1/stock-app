@@ -29,10 +29,25 @@ if not API_KEY or not API_SECRET:
 # LOGIN
 # ==========================================
 
-access_token = GrowwAPI.get_access_token(
-    api_key=API_KEY,
-    secret=API_SECRET,
-)
+print("API USER:", API_USER, flush=True)
+print("API KEY:", API_KEY, flush=True)
+print("API SECRET:", API_SECRET, flush=True)
+
+try:
+
+    access_token = GrowwAPI.get_access_token(
+        api_key=API_KEY,
+        secret=API_SECRET,
+    )
+
+    print("ACCESS TOKEN:", access_token, flush=True)
+
+except Exception as e:
+
+    print("LOGIN FAILED",API_KEY)
+    print("ERROR:", str(e), flush=True)
+
+    sys.exit(1)
 
 groww = GrowwAPI(access_token)
 

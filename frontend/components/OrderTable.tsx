@@ -193,7 +193,7 @@ export default function OrderTable({
               "application/json",
           },
 
-          body: JSON.stringify({
+            body: JSON.stringify({
             action: "SELL",
 
             symbol:
@@ -208,6 +208,9 @@ export default function OrderTable({
 
             platform:
               sellPopup.platform,
+
+            user:
+              sellPopup.user,
           }),
         }
       );
@@ -277,7 +280,8 @@ export default function OrderTable({
 
   const cancelOrder = async (
     id: string,
-    platform: string
+    platform: string,
+    user: string
   ) => {
 
     try {
@@ -295,6 +299,7 @@ export default function OrderTable({
           body: JSON.stringify({
             order_id: id,
             platform,
+            user,
           }),
         }
       );
@@ -565,7 +570,7 @@ export default function OrderTable({
                     Sell
                   </button>
                   <button
-                    onClick={() => cancelOrder(order.id, order.platform)}
+                    onClick={() => cancelOrder(order.id, order.platform, order.user)}
                     disabled={order.status === "Cancelled"}
                     className="flex flex-col items-center justify-center py-4 text-[10px] font-bold text-red-400 hover:bg-red-50 disabled:opacity-30"
                   >
@@ -663,7 +668,7 @@ export default function OrderTable({
                           <ArrowUpRight className="h-4 w-4" />
                         </button>
                         <button
-                          onClick={() => cancelOrder(order.id, order.platform)}
+                          onClick={() => cancelOrder(order.id, order.platform, order.user)}
                           className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-50 text-red-500 transition-colors hover:bg-red-600 hover:text-white"
                           title="Cancel Order"
                         >

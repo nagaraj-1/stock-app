@@ -7,7 +7,7 @@ import json
 import subprocess
 import asyncio
 from kiteconnect import KiteConnect
-from credentials import load_credentials, save_credentials
+from credentials import load_credentials, save_credentials, get_groww_credentials
 
 app = FastAPI()
 
@@ -343,21 +343,34 @@ def execute_order(data: dict):
 
         print("SCRIPT:", script_name)
 
+        # If Groww, validate credentials exist before spawning the script
+        if platform == "Groww":
+            api_key, api_secret = get_groww_credentials(user)
+            if not api_key or not api_secret:
+                return {
+                    "status": "error",
+                    "message": f"Missing Groww credentials for user {user}. Save via /save-credentials.",
+                }
+
         # ======================================
         # RUN SCRIPT
         # ======================================
 
-        output = run_live_process(
-            [
-                "python3",
-                "-u",
-                script_name,
-                action,
-                symbol,
-                qty,
-                price,
-            ]
-        )
+        cmd = [
+            "python3",
+            "-u",
+            script_name,
+            action,
+            symbol,
+            qty,
+            price,
+        ]
+
+        # Pass user for Groww scripts which expect a user identifier
+        if platform == "Groww" and user:
+            cmd.append(user)
+
+        output = run_live_process(cmd)
 
         # ======================================
         # GET ORDER ID
@@ -416,6 +429,7 @@ def cancel_order(data: dict):
         order_id = data["order_id"]
 
         platform = data["platform"]
+        user = data.get("user", "")
 
         print(
             "\n========== CANCEL ORDER =========="
@@ -447,15 +461,18 @@ def cancel_order(data: dict):
                     "Invalid platform",
             }
 
-        output = run_live_process(
-            [
-                "python3",
-                "-u",
-                script_name,
-                "CANCEL",
-                order_id,
-            ]
-        )
+        cmd = [
+            "python3",
+            "-u",
+            script_name,
+            "CANCEL",
+            order_id,
+        ]
+
+        if platform == "Groww" and user:
+            cmd.append(user)
+
+        output = run_live_process(cmd)
 
         return {
             "status": "success",
