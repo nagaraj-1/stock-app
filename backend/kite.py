@@ -34,31 +34,19 @@ if action == "CANCEL":
     print("ORDER ID:", order_id, flush=True)
 
     try:
-    # 1. Clean and sanitize the order ID string
-        clean_order_id = str(order_id).strip()
-        
-        # 2. Fetch order history to check current status dynamically
-        order_history = kite.order_history(order_id=clean_order_id)
-        if order_history:
-            latest_order_state = order_history[-1]
-            current_status = latest_order_state.get("status")
 
-            print(f"Attempting to cancel Order ID: {clean_order_id} | Current Status: {current_status}", flush=True)
+        cancel_order_response = kite.cancel_order(
+            variety=kite.VARIETY_REGULAR,
+            order_id=order_id
+        )
 
-            if current_status in ["COMPLETE", "CANCELLED", "REJECTED"]:
-                print(f"Skipping cancellation: Order is already {current_status}.", flush=True)
-            else:
-                cancel_order_response = kite.cancel_order(
-                    variety=kite.VARIETY_REGULAR, # Ensure this matches original variety (e.g., VARIETY_AMO)
-                    order_id=clean_order_id
-                )
-                print("CANCEL RESPONSE:", cancel_order_response, flush=True)
-        else:
-            print("CANCEL FAILED: Order ID not found in broker records.", flush=True)
+        print("CANCEL RESPONSE:", cancel_order_response, flush=True)
 
     except Exception as e:
+
         print("CANCEL FAILED:", str(e), flush=True)
-        sys.exit(0)
+
+    sys.exit(0)
 
 # ==========================================
 # INPUTS
@@ -109,27 +97,25 @@ try:
         # BUY STOPLOSS MARKET
 
         order_id = kite.place_order(
-            variety=kite.VARIETY_AMO,
-            exchange=kite.EXCHANGE_NSE,
-            tradingsymbol=symbol,
-            transaction_type=transaction_type,
-            quantity=qty,
-            product=kite.PRODUCT_MIS,
-
-
-              # Stoploss limit order
-            order_type=kite.ORDER_TYPE_SL,
-
-    # Actual execution price
-            price=price,
-
-    # Trigger price
-            trigger_price=price,
-
-            validity=kite.VALIDITY_DAY,
-
-            tag=order_reference_id
-        )
+    variety=kite.VARIETY_REGULAR,
+    exchange=kite.EXCHANGE_NSE,
+    tradingsymbol=symbol,
+    transaction_type=transaction_type,
+    quantity=qty,
+    product=kite.PRODUCT_MIS,
+    
+    # Changed to Stoploss Market order
+    order_type=kite.ORDER_TYPE_SLM,
+    
+    # For SL-M orders, price should be 0 
+    price=0,
+    
+    # The order will trigger and execute at market when this price is hit
+    trigger_price=price, 
+    
+    validity=kite.VALIDITY_DAY,
+    tag=order_reference_id
+)
 
     # ==========================================
     # SELL ORDER
@@ -140,20 +126,22 @@ try:
         # SELL MARKET ORDER
 
         order_id = kite.place_order(
-            variety=kite.VARIETY_AMO,
+            variety=kite.VARIETY_REGULAR,
             exchange=kite.EXCHANGE_NSE,
             tradingsymbol=symbol,
             transaction_type=transaction_type,
             quantity=qty,
             product=kite.PRODUCT_MIS,
 
-            order_type=kite.ORDER_TYPE_MARKET,
+            # 1. Change to LIMIT for safety
+            order_type=kite.ORDER_TYPE_LIMIT,
+
+            # 2. You MUST provide a price parameter when using LIMIT
+            price=price,  # Specify your desired entry limit price
 
             validity=kite.VALIDITY_DAY,
-
             tag=order_reference_id
         )
-
     print("ORDER SUCCESS", flush=True)
 
     print("ORDER ID:", order_id, flush=True)

@@ -140,16 +140,22 @@ try:
         # SELL → NORMAL MARKET ORDER
 
         place_order_response = groww.place_order(
-            trading_symbol=symbol,
-            quantity=qty,
-            validity=groww.VALIDITY_DAY,
-            exchange=groww.EXCHANGE_NSE,
-            segment=groww.SEGMENT_CASH,
-            product=groww.PRODUCT_MIS,
-            order_type=groww.ORDER_TYPE_MARKET,
-            transaction_type=transaction_type,
-            order_reference_id=order_reference_id,
-        )
+    trading_symbol=symbol,
+    quantity=qty,
+    validity=groww.VALIDITY_DAY,
+    exchange=groww.EXCHANGE_NSE,
+    segment=groww.SEGMENT_CASH,
+    product=groww.PRODUCT_MIS,
+    
+    # 1. Change MARKET to LIMIT so the exchange respects your price
+    order_type=groww.ORDER_TYPE_LIMIT,
+    
+    # 2. Assign your target selling price here
+    price=price,  # Pass your desired target sell price variable or float
+    
+    transaction_type=transaction_type, # Ensure your variable here evaluates to selling constants
+    order_reference_id=order_reference_id,
+)
 
     print("ORDER RESPONSE:", place_order_response, flush=True)
 

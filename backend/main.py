@@ -12,6 +12,7 @@ from credentials import load_credentials, save_credentials, get_groww_credential
 app = FastAPI()
 
 BASE_DIR = Path(__file__).resolve().parent
+main_loop = None
 INVESTMENT_FILE = BASE_DIR / "invest.json"
 ACCESS_TOKEN_FILE = BASE_DIR / "access_token.txt"
 KITE_API_KEY = "gy6zhrcj24q331y0"
@@ -175,6 +176,127 @@ def post_investment_settings(data: dict):
 
 
 # ==========================================
+# PLAYWRIGHT GROWW SCANNER
+# ==========================================
+
+
+@app.get("/playwright-script")
+def run_playwright_script():
+    try:
+        from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
+        from playwright.sync_api import sync_playwright
+    except ModuleNotFoundError:
+        return {
+            "status": "error",
+            "message": "Playwright is not installed. Run: python3 -m pip install -r requirements.txt && python3 -m playwright install chromium",
+            "rows": [],
+        }
+
+    try:
+        broadcast_log("PLAYWRIGHT SCRIPT STARTED")
+
+        with sync_playwright() as playwright:
+            browser = playwright.chromium.launch(
+                headless=True
+            )
+
+            page = browser.new_page(
+                viewport={
+                    "width": 1440,
+                    "height": 900,
+                }
+            )
+
+            page.goto(
+                "https://groww.in/stocks/intraday",
+                wait_until="domcontentloaded",
+                timeout=60000,
+            )
+
+            try:
+                page.get_by_text(
+                    "Price change >1%"
+                ).first.click(
+                    timeout=10000
+                )
+
+                page.locator("div").filter(
+                    has_text="Price change >1%"
+                ).nth(1).click(
+                    timeout=10000
+                )
+
+                page.locator("div").filter(
+                    has_text="Price change >1%"
+                ).nth(1).click(
+                    timeout=10000
+                )
+
+                page.get_by_text(
+                    "Today"
+                ).nth(1).click(
+                    timeout=10000
+                )
+
+                page.wait_for_timeout(3000)
+
+                sort_icon = page.locator(
+                    "th:nth-child(5) > .flex > svg"
+                )
+
+                sort_icon.click(
+                    timeout=10000
+                )
+
+                sort_icon.click(
+                    timeout=10000
+                )
+            except PlaywrightTimeoutError:
+                broadcast_log("PLAYWRIGHT FILTER STEP SKIPPED")
+
+            page.wait_for_selector(
+                "table tbody tr",
+                timeout=30000,
+            )
+
+            headers = page.locator(
+                "table thead th"
+            ).evaluate_all(
+                "(ths) => ths.map((th) => th.innerText.trim()).filter(Boolean)"
+            )
+
+            rows = page.locator(
+                "table tbody tr"
+            ).evaluate_all(
+                """
+                (trs) => trs.slice(0, 20).map((tr) =>
+                  Array.from(tr.querySelectorAll('td')).map((td) =>
+                    td.innerText.trim().replace(/\\s+/g, ' ')
+                  ).filter(Boolean)
+                ).filter((row) => row.length > 0)
+                """
+            )
+
+            browser.close()
+
+        broadcast_log(f"PLAYWRIGHT ROWS FOUND: {len(rows)}")
+
+        return {
+            "status": "success",
+            "headers": headers,
+            "rows": rows,
+        }
+    except Exception as e:
+        broadcast_log(f"PLAYWRIGHT SCRIPT FAILED: {str(e)}")
+
+        return {
+            "status": "error",
+            "message": str(e),
+            "rows": [],
+        }
+
+
+# ==========================================
 # CREDENTIALS STORAGE
 # ==========================================
 
@@ -269,9 +391,7 @@ def run_live_process(command):
 
         output += line + "\n"
 
-        asyncio.run(
-            send_log(line)
-        )
+        broadcast_log(line)
 
     process.wait()
 
@@ -542,9 +662,7 @@ def run_ai_process(
 
         print(line)
 
-        asyncio.run(
-            send_log(line)
-        )
+        broadcast_log(line)
 
     # REMOVE PROCESS AFTER END
 
@@ -672,11 +790,7 @@ def stop_tracking(data: dict):
             order_id
         ]
 
-        asyncio.run(
-            send_log(
-                f"TRACKING STOPPED: {order_id}"
-            )
-        )
+        broadcast_log(f"TRACKING STOPPED: {order_id}")
 
         return {
             "status": "success",

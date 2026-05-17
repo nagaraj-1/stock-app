@@ -3,7 +3,6 @@
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Clock3,
-  Package2,
   IndianRupee,
   Terminal,
   Wifi,
@@ -14,29 +13,67 @@ import {
   Ban,
   TrendingDown,
   ArrowUpRight,
+  Zap,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type Dispatch, type SetStateAction } from "react";
 import { API_PREFIX, WS_URL } from "@/config/api";
+import { Order } from "@/types/order";
+
+type OrderTableProps = {
+  orders: Order[];
+  setOrders: Dispatch<SetStateAction<Order[]>>;
+};
 
 export default function OrderTable({
   orders,
   setOrders,
-}: any) {
+}: OrderTableProps) {
 
   // ==========================================
   // STATE
   // ==========================================
 
   const [sellPopup, setSellPopup] =
-    useState<any>(null);
+    useState<Order | null>(null);
 
   const [sellAmount, setSellAmount] =
     useState("");
 
   const [loading, setLoading] =
     useState(false);
+  const [immediateSellingId, setImmediateSellingId] =
+    useState<string | null>(null);
   const [logs, setLogs] =
     useState<string[]>([]);
+  const [message, setMessage] =
+    useState<string | null>(null);
+  const [messageType, setMessageType] =
+    useState<"success" | "error">(
+      "success"
+    );
+
+  const showMessage = (
+    text: string,
+    type: "success" | "error" = "success"
+  ) => {
+    setMessage(text);
+    setMessageType(type);
+  };
+
+  useEffect(() => {
+    if (!message) {
+      return;
+    }
+
+    const timeout =
+      window.setTimeout(() => {
+        setMessage(null);
+      }, 3000);
+
+    return () => {
+      window.clearTimeout(timeout);
+    };
+  }, [message]);
 
   useEffect(() => {
 
@@ -78,19 +115,37 @@ export default function OrderTable({
   // ==========================================
   // OPEN SELL POPUP
   // ==========================================
+  const defaultSellPercentage = 17;
   const [sellPercentage, setSellPercentage] =
-    useState(17);
+    useState(defaultSellPercentage);
+
+  const getDefaultSellPrice = (
+    order: Order
+  ) => {
+    const currentPercentage =
+      Number(order.percentage || 0);
+
+    return Number(
+      (
+        (
+          Number(order.price) /
+          (1 + currentPercentage / 100)
+        ) *
+        (
+          1 +
+          defaultSellPercentage / 100
+        )
+      ).toFixed(2)
+    );
+  };
 
   const openSellPopup = (
-    order: any
+    order: Order
   ) => {
     console.log(order.price);
 
     // Excel Logic:
     // =ROUND((B11 / (1 + (C11 / 100))) * (1 + (C12 / 100)), 2)
-
-    const currentPercentage =
-      Number(order.percentage || 0);
 
     const defaultSellPercentage = 17;
 
@@ -98,16 +153,8 @@ export default function OrderTable({
       defaultSellPercentage
     );
 
-    const amount = (
-      (
-        Number(order.price) /
-        (1 + currentPercentage / 100)
-      ) *
-      (
-        1 +
-        defaultSellPercentage / 100
-      )
-    ).toFixed(2);
+    const amount =
+      getDefaultSellPrice(order).toFixed(2);
 
     setSellAmount(amount);
 
@@ -120,7 +167,7 @@ export default function OrderTable({
   // ==========================================
 
   const aiTracking = async (
-    order: any
+    order: Order
   ) => {
 
     try {
@@ -177,51 +224,79 @@ export default function OrderTable({
   // SELL ORDER
   // ==========================================
 
+  const executeSellOrder = async (
+    order: Order,
+    price: number
+  ) => {
+    const response = await fetch(
+      `${API_PREFIX}/execute-order`,
+      {
+        method: "POST",
+
+        headers: {
+          "Content-Type":
+            "application/json",
+        },
+
+        body: JSON.stringify({
+          action: "SELL",
+
+          symbol:
+            order.symbol,
+
+          qty:
+            order.qty,
+
+          price,
+
+          platform:
+            order.platform,
+
+          user:
+            order.user,
+        }),
+      }
+    );
+
+    const data =
+      await response.json();
+
+    if (
+      data.status !== "success"
+    ) {
+      throw new Error(
+        data.message || "Sell Failed"
+      );
+    }
+
+    return data;
+  };
+
   const sellOrder = async () => {
+
+    if (
+      !sellPopup
+    ) {
+      return;
+    }
 
     try {
 
       setLoading(true);
 
-      const response = await fetch(
-        `${API_PREFIX}/execute-order`,
-        {
-          method: "POST",
-
-          headers: {
-            "Content-Type":
-              "application/json",
-          },
-
-            body: JSON.stringify({
-            action: "SELL",
-
-            symbol:
-              sellPopup.symbol,
-
-            qty:
-              sellPopup.qty,
-
-            price: Number(
-              sellAmount
-            ),
-
-            platform:
-              sellPopup.platform,
-
-            user:
-              sellPopup.user,
-          }),
-        }
-      );
-
       const data =
-        await response.json();
+        await executeSellOrder(
+          sellPopup,
+          Number(
+            sellAmount
+          )
+        );
 
       console.log(data);
 
-      alert(
-        "Sell Order Success"
+      showMessage(
+        "Sell Order Success",
+        "success"
       );
 
       setSellPopup(null);
@@ -230,11 +305,58 @@ export default function OrderTable({
 
       console.log(err);
 
-      alert("Sell Failed");
+      showMessage(
+        "Sell Failed",
+        "error"
+      );
 
     } finally {
 
       setLoading(false);
+    }
+  };
+
+  const immediateSellOrder = async (
+    order: Order
+  ) => {
+
+    try {
+
+      setImmediateSellingId(
+        order.id
+      );
+
+      const targetPrice =
+        getDefaultSellPrice(order);
+
+      setSellPercentage(defaultSellPercentage);
+      setSellAmount(targetPrice.toFixed(2));
+
+      const data =
+        await executeSellOrder(
+          order,
+          targetPrice
+        );
+
+      console.log(data);
+
+      showMessage(
+        "Sell Order Success",
+        "success"
+      );
+
+    } catch (err) {
+
+      console.log(err);
+
+      showMessage(
+        "Sell Failed",
+        "error"
+      );
+
+    } finally {
+
+      setImmediateSellingId(null);
     }
   };
 
@@ -311,8 +433,8 @@ export default function OrderTable({
         data.status === "success"
       ) {
 
-        setOrders((prev: any) =>
-          prev.map((o: any) =>
+        setOrders((prev) =>
+          prev.map((o) =>
             o.id === id
               ? {
                 ...o,
@@ -336,6 +458,24 @@ export default function OrderTable({
 
   return (
     <div className="mt-8">
+      <AnimatePresence>
+        {message && (
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20 }}
+            className={`fixed right-6 top-24 z-50 max-w-xs rounded-3xl border p-4 shadow-2xl ${
+              messageType === "success"
+                ? "border-emerald-200 bg-emerald-500 text-white"
+                : "border-rose-200 bg-rose-500 text-white"
+            }`}
+          >
+            <div className="text-sm font-bold">
+              {message}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ===================================== */}
       {/* SELL POPUP */}
@@ -498,7 +638,7 @@ export default function OrderTable({
         <AnimatePresence>
 
           {orders.map(
-            (order: any) => (
+            (order) => (
 
               <motion.div
                 key={order.id}
@@ -547,7 +687,7 @@ export default function OrderTable({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-4 border-t border-slate-100">
+                <div className="grid grid-cols-5 border-t border-slate-100">
                   <button
                     onClick={() => aiTracking(order)}
                     className="flex flex-col items-center justify-center py-4 text-[10px] font-bold text-violet-500 hover:bg-violet-50"
@@ -567,6 +707,14 @@ export default function OrderTable({
                     className="flex flex-col items-center justify-center py-4 text-[10px] font-bold text-orange-500 hover:bg-orange-50"
                   >
                     <TrendingDown className="h-5 w-5 mb-1" />
+                    Sell
+                  </button>
+                  <button
+                    onClick={() => immediateSellOrder(order)}
+                    disabled={immediateSellingId === order.id}
+                    className="flex flex-col items-center justify-center py-4 text-[10px] font-bold text-amber-600 hover:bg-amber-50 disabled:opacity-30"
+                  >
+                    <Zap className="h-5 w-5 mb-1" />
                     Sell
                   </button>
                   <button
@@ -605,7 +753,7 @@ export default function OrderTable({
             </thead>
             <tbody className="divide-y divide-slate-100">
               {orders.map(
-                (order: any) => (
+                (order) => (
                   <tr key={order.id} className="group transition-colors hover:bg-slate-50/50">
                     <td className="px-8 py-5">
                       <div className="flex flex-col">
@@ -666,6 +814,14 @@ export default function OrderTable({
                           title="Execute Sell"
                         >
                           <ArrowUpRight className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => immediateSellOrder(order)}
+                          disabled={immediateSellingId === order.id}
+                          className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 text-amber-600 transition-colors hover:bg-amber-500 hover:text-white disabled:opacity-30"
+                          title="Immediate Sell"
+                        >
+                          <Zap className="h-4 w-4" />
                         </button>
                         <button
                           onClick={() => cancelOrder(order.id, order.platform, order.user)}
