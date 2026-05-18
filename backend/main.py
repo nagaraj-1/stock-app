@@ -225,7 +225,7 @@ def save_creds(user: str, api_key: str, secret: str):
 @app.get("/kiteAuthTokenSave")
 def kite_auth_token_save(request_token: str):
     try:
-        
+        print("\REQ TOKEN:",request_token)
         kite = KiteConnect(api_key=KITE_API_KEY)
 
         data = kite.generate_session(
