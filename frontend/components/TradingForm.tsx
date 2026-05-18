@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { useEffect, useMemo, useState } from "react";
+import { motion } from "framer-motion";
 import {
   Loader2,
   IndianRupee,
@@ -16,17 +16,18 @@ import PlatformSelect from "./PlatformSelect";
 import { users, platforms } from "@/data/constants";
 import { API_PREFIX } from "@/config/api";
 import { Order } from "@/types/order";
-
-type PlaywrightRow = string[];
+import { SelectedIntradayStock } from "./IntradayStocks";
 
 type TradingFormProps = {
   setOrders: React.Dispatch<React.SetStateAction<Order[]>>;
   investmentSettings: Record<string, number>;
+  selectedStock?: SelectedIntradayStock | null;
 };
 
 export default function TradingForm({
   setOrders,
   investmentSettings,
+  selectedStock,
 }: TradingFormProps) {
   const [symbol, setSymbol] = useState("RELIANCE");
   const [price, setPrice] = useState(10);
@@ -34,55 +35,22 @@ export default function TradingForm({
   const [selectedUser, setSelectedUser] = useState("NAG");
   const [selectedPlatform, setSelectedPlatform] = useState("Groww");
   const [loading, setLoading] = useState(false);
-  const [showScriptPopup, setShowScriptPopup] = useState(false);
-  const [scriptLoading, setScriptLoading] = useState(false);
-  const [scriptError, setScriptError] = useState("");
-  const [scriptHeaders, setScriptHeaders] = useState<string[]>([]);
-  const [scriptRows, setScriptRows] = useState<PlaywrightRow[]>([]);
 
-  const playwrightScript = [
-    {
-      step: "Open page",
-      code: "await page.goto('https://groww.in/stocks/intraday', { waitUntil: 'domcontentloaded', timeout: 60000 });",
-    },
-    {
-      step: "Filter >1% change",
-      code: "await page.getByText('Price change >1%').first().click();",
-    },
-    {
-      step: "Open filter dropdown",
-      code: "await page.locator('div').filter({ hasText: /^Price change >1%$/ }).nth(1).click();",
-    },
-    {
-      step: "Confirm filter",
-      code: "await page.locator('div').filter({ hasText: /^Price change >1%$/ }).nth(1).click();",
-    },
-    {
-      step: "Select Today",
-      code: "await page.getByText('Today').nth(1).click();",
-    },
-    {
-      step: "Wait after selection",
-      code: "await page.waitForTimeout(3000);",
-    },
-    {
-      step: "Sort by column",
-      code: "await page.locator('th:nth-child(5) > .flex > svg').click();",
-    },
-    {
-      step: "Reverse sort",
-      code: "await page.locator('th:nth-child(5) > .flex > svg').click();",
-    },
-    {
-      step: "Wait for rows",
-      code: "await page.waitForSelector('table tbody tr');",
-    },
-    {
-      step: "Final delay",
-      code: "await page.waitForTimeout(1000);",
-    },
-  ];
+  useEffect(() => {
+    if (selectedStock) {
+      const timer = window.setTimeout(() => {
+        setSymbol(selectedStock.symbol.toUpperCase());
+        setPrice(selectedStock.price);
+        setPercentage(selectedStock.percentage);
+      }, 0);
 
+      return () => {
+        window.clearTimeout(timer);
+      };
+    }
+  }, [selectedStock]);
+
+  
   // ====================================
   // LIVE CALCULATIONS
   // ====================================
@@ -145,52 +113,14 @@ export default function TradingForm({
       };
 
       setOrders((prev) => [order, ...prev]);
-      setLoading(false);
     } catch (error) {
       console.error(error);
-      setLoading(false);
-    }
-  };
-
-  const runPlaywrightScript = async () => {
-    try {
-      setShowScriptPopup(true);
-      setScriptLoading(true);
-      setScriptError("");
-      setScriptRows([]);
-      setScriptHeaders([]);
-
-      const response = await fetch(`${API_PREFIX}/playwright-script`);
-      const contentType = response.headers.get("content-type") || "";
-      let data: any = null;
-
-      if (contentType.includes("application/json")) {
-        data = await response.json();
-      } else {
-        const body = await response.text();
-        throw new Error(
-          `Invalid JSON response from server: ${body.slice(0, 300)}`
-        );
-      }
-
-      if (!response.ok || data.status !== "success") {
-        throw new Error(data.message || "Playwright script failed");
-      }
-
-      setScriptHeaders(Array.isArray(data.headers) ? data.headers : []);
-      setScriptRows(Array.isArray(data.rows) ? data.rows : []);
-    } catch (error) {
-      console.error(error);
-      setScriptError(
-        error instanceof Error
-          ? error.message
-          : "Playwright script failed"
-      );
     } finally {
-      setScriptLoading(false);
+      setLoading(false);
     }
   };
 
+  
     return (
       <motion.div
         initial={{ opacity: 0, y: 15 }}
@@ -299,20 +229,13 @@ export default function TradingForm({
               </div>
             </div>
 
-            <div className="mt-8 pt-8 border-t border-slate-200 space-y-4">
-              <button
-                onClick={runPlaywrightScript}
-                disabled={scriptLoading}
-                className="flex h-14 w-full items-center justify-center rounded-2xl border border-slate-200 bg-white text-sm font-black uppercase tracking-wider text-slate-700 transition hover:border-blue-400 hover:text-blue-700"
-              >
-                {scriptLoading ? "Running Playwright..." : "Run Playwright Script"}
-              </button>
+            <div className="mt-8 space-y-4 border-t border-slate-200 pt-8">
               <motion.button
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={executeOrder}
                 disabled={loading}
-                className="group relative flex h-16 w-full items-center justify-center gap-3 rounded-2xl bg-blue-600 text-xl font-black text-white shadow-2xl shadow-blue-500/30 transition-all hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="group relative flex h-16 w-full items-center justify-center gap-3 rounded-2xl bg-blue-600 text-xl font-black text-white shadow-2xl shadow-blue-500/30 transition-all hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {loading ? (
                   <Loader2 className="h-6 w-6 animate-spin" />
@@ -327,115 +250,6 @@ export default function TradingForm({
                 Final calculation includes 15.51% brokerage
               </p>
             </div>
-            <AnimatePresence>
-              {showScriptPopup && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
-                >
-                  <motion.div
-                    initial={{ scale: 0.95, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    exit={{ scale: 0.95, opacity: 0 }}
-                    className="w-full max-w-3xl overflow-hidden rounded-[40px] bg-white shadow-2xl"
-                  >
-                    <div className="flex items-center justify-between border-b border-slate-200 p-6">
-                      <div>
-                        <h3 className="text-2xl font-black text-slate-900">Playwright Script</h3>
-                        <p className="text-sm text-slate-500">Runs Groww scanner and displays table rows.</p>
-                      </div>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={runPlaywrightScript}
-                          disabled={scriptLoading}
-                          className="rounded-2xl bg-blue-600 px-4 py-2 text-sm font-bold text-white hover:bg-blue-700 disabled:opacity-50"
-                        >
-                          {scriptLoading ? "Running..." : "Run"}
-                        </button>
-                        <button
-                          onClick={() => setShowScriptPopup(false)}
-                          className="rounded-2xl bg-slate-100 px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-200"
-                        >
-                          Close
-                        </button>
-                      </div>
-                    </div>
-                    <div className="max-h-[70vh] overflow-auto p-6">
-                      {scriptLoading && (
-                        <div className="mb-6 flex items-center gap-3 rounded-2xl bg-blue-50 p-4 text-sm font-bold text-blue-700">
-                          <Loader2 className="h-5 w-5 animate-spin" />
-                          Running Playwright script...
-                        </div>
-                      )}
-
-                      {scriptError && (
-                        <div className="mb-6 rounded-2xl border border-red-100 bg-red-50 p-4 text-sm font-bold text-red-700">
-                          {scriptError}
-                        </div>
-                      )}
-
-                      {scriptRows.length > 0 && (
-                        <div className="mb-6 overflow-x-auto">
-                          <table className="min-w-full divide-y divide-slate-200 text-left text-sm">
-                            <thead className="bg-slate-900 text-white">
-                              <tr>
-                                {(scriptHeaders.length > 0 ? scriptHeaders : scriptRows[0].map((_, index) => `Column ${index + 1}`)).map((header) => (
-                                  <th key={header} className="px-4 py-3 font-bold uppercase tracking-wider">
-                                    {header}
-                                  </th>
-                                ))}
-                              </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-200 bg-white">
-                              {scriptRows.map((row, rowIndex) => (
-                                <tr key={`${row.join("-")}-${rowIndex}`}>
-                                  {row.map((cell, cellIndex) => (
-                                    <td key={`${cell}-${cellIndex}`} className="px-4 py-3 font-bold text-slate-700">
-                                      {cell}
-                                    </td>
-                                  ))}
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      )}
-
-                      {!scriptLoading && !scriptError && scriptRows.length === 0 && (
-                        <div className="mb-6 rounded-2xl bg-slate-50 p-4 text-sm font-bold text-slate-500">
-                          No table data loaded yet.
-                        </div>
-                      )}
-
-                      <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-slate-200 text-left text-sm">
-                          <thead>
-                            <tr>
-                              <th className="px-4 py-3 font-bold uppercase tracking-wider text-slate-500">Step</th>
-                              <th className="px-4 py-3 font-bold uppercase tracking-wider text-slate-500">Playwright Code</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-slate-200 bg-slate-50">
-                            {playwrightScript.map((item) => (
-                              <tr key={item.step}>
-                                <td className="px-4 py-4 font-bold text-slate-800 align-top">{item.step}</td>
-                                <td className="px-4 py-4 text-slate-700">
-                                  <code className="block rounded-2xl bg-white p-3 text-xs text-slate-800 shadow-sm">
-                                    {item.code}
-                                  </code>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  </motion.div>
-                </motion.div>
-              )}
-            </AnimatePresence>
           </div>
         </div>
       </motion.div>

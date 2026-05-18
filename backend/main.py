@@ -94,6 +94,17 @@ async def send_log(message):
         clients.remove(client)
 
 
+@app.on_event("startup")
+async def startup_event():
+    global main_loop
+    main_loop = asyncio.get_running_loop()
+
+def broadcast_log(message):
+    print(message)
+    if main_loop and main_loop.is_running():
+        asyncio.run_coroutine_threadsafe(send_log(message), main_loop)
+
+
 # ==========================================
 # WEBSOCKET
 # ==========================================
@@ -174,126 +185,6 @@ def post_investment_settings(data: dict):
         "message": "Unable to save investment settings.",
     }
 
-
-# ==========================================
-# PLAYWRIGHT GROWW SCANNER
-# ==========================================
-
-
-@app.get("/playwright-script")
-def run_playwright_script():
-    try:
-        from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
-        from playwright.sync_api import sync_playwright
-    except ModuleNotFoundError:
-        return {
-            "status": "error",
-            "message": "Playwright is not installed. Run: python3 -m pip install -r requirements.txt && python3 -m playwright install chromium",
-            "rows": [],
-        }
-
-    try:
-        broadcast_log("PLAYWRIGHT SCRIPT STARTED")
-
-        with sync_playwright() as playwright:
-            browser = playwright.chromium.launch(
-                headless=True
-            )
-
-            page = browser.new_page(
-                viewport={
-                    "width": 1440,
-                    "height": 900,
-                }
-            )
-
-            page.goto(
-                "https://groww.in/stocks/intraday",
-                wait_until="domcontentloaded",
-                timeout=60000,
-            )
-
-            try:
-                page.get_by_text(
-                    "Price change >1%"
-                ).first.click(
-                    timeout=10000
-                )
-
-                page.locator("div").filter(
-                    has_text="Price change >1%"
-                ).nth(1).click(
-                    timeout=10000
-                )
-
-                page.locator("div").filter(
-                    has_text="Price change >1%"
-                ).nth(1).click(
-                    timeout=10000
-                )
-
-                page.get_by_text(
-                    "Today"
-                ).nth(1).click(
-                    timeout=10000
-                )
-
-                page.wait_for_timeout(3000)
-
-                sort_icon = page.locator(
-                    "th:nth-child(5) > .flex > svg"
-                )
-
-                sort_icon.click(
-                    timeout=10000
-                )
-
-                sort_icon.click(
-                    timeout=10000
-                )
-            except PlaywrightTimeoutError:
-                broadcast_log("PLAYWRIGHT FILTER STEP SKIPPED")
-
-            page.wait_for_selector(
-                "table tbody tr",
-                timeout=30000,
-            )
-
-            headers = page.locator(
-                "table thead th"
-            ).evaluate_all(
-                "(ths) => ths.map((th) => th.innerText.trim()).filter(Boolean)"
-            )
-
-            rows = page.locator(
-                "table tbody tr"
-            ).evaluate_all(
-                """
-                (trs) => trs.slice(0, 20).map((tr) =>
-                  Array.from(tr.querySelectorAll('td')).map((td) =>
-                    td.innerText.trim().replace(/\\s+/g, ' ')
-                  ).filter(Boolean)
-                ).filter((row) => row.length > 0)
-                """
-            )
-
-            browser.close()
-
-        broadcast_log(f"PLAYWRIGHT ROWS FOUND: {len(rows)}")
-
-        return {
-            "status": "success",
-            "headers": headers,
-            "rows": rows,
-        }
-    except Exception as e:
-        broadcast_log(f"PLAYWRIGHT SCRIPT FAILED: {str(e)}")
-
-        return {
-            "status": "error",
-            "message": str(e),
-            "rows": [],
-        }
 
 
 # ==========================================
@@ -402,6 +293,146 @@ def run_live_process(command):
 # EXECUTE ORDER
 # BUY / SELL
 # ==========================================
+
+
+@app.get("/intraday-stocks")
+def get_intraday_stocks():
+    try:
+        node_script = BASE_DIR / "grow.js"
+        if not node_script.exists():
+            return {
+                "status": "error",
+                "message": "grow.js not found in backend folder.",
+                "data": [],
+            }
+
+        process = subprocess.run(
+            ["node", str(node_script)],
+            cwd=BASE_DIR,
+            capture_output=True,
+            text=True,
+            timeout=90000,
+        )
+
+        output = process.stdout.strip()
+        error_output = process.stderr.strip()
+        json_line = ""
+
+        for line in reversed(output.splitlines()):
+            line = line.strip()
+            if line.startswith("{"):
+                json_line = line
+                break
+
+        if not json_line:
+            return {
+                "status": "error",
+                "message": "grow.js did not return JSON.",
+                "output": output,
+                "error": error_output,
+                "data": [],
+            }
+
+        result = json.loads(json_line)
+        data = result.get("data", [])
+
+        if result.get("status") != "success" or process.returncode != 0:
+            return {
+                "status": "error",
+                "message": result.get("message", "grow.js failed."),
+                "output": output,
+                "error": error_output,
+                "data": data,
+            }
+
+        headers = ["Stock", "Symbol", "LTP", "Change", "Volume", "Extra"]
+        rows = [
+            [
+                stock.get("stock", ""),
+                stock.get("symbol", ""),
+                stock.get("ltp", ""),
+                stock.get("change", ""),
+                stock.get("volume", ""),
+                stock.get("extra", ""),
+            ]
+            for stock in data
+        ]
+
+        return {
+            "status": "success",
+            "data": data,
+            "output": output,
+            "headers": headers,
+            "rows": rows,
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": str(e),
+            "data": [],
+        }
+
+
+@app.get("/stock-symbol")
+def get_stock_symbol(stock_name: str):
+    try:
+        node_script = BASE_DIR / "symbol.js"
+        if not node_script.exists():
+            return {
+                "status": "error",
+                "message": "symbol.js not found in backend folder.",
+                "symbol": "",
+            }
+
+        process = subprocess.run(
+            ["node", str(node_script), stock_name],
+            cwd=BASE_DIR,
+            capture_output=True,
+            text=True,
+            timeout=90000,
+        )
+
+        output = process.stdout.strip()
+        error_output = process.stderr.strip()
+        json_line = ""
+
+        for line in reversed(output.splitlines()):
+            line = line.strip()
+            if line.startswith("{"):
+                json_line = line
+                break
+
+        if not json_line:
+            return {
+                "status": "error",
+                "message": "symbol.js did not return JSON.",
+                "output": output,
+                "error": error_output,
+                "symbol": "",
+            }
+
+        result = json.loads(json_line)
+
+        if result.get("status") != "success" or process.returncode != 0:
+            return {
+                "status": "error",
+                "message": result.get("message", "symbol.js failed."),
+                "output": output,
+                "error": error_output,
+                "symbol": "",
+            }
+
+        return {
+            "status": "success",
+            "symbol": result.get("symbol", ""),
+            "output": output,
+        }
+    except Exception as e:
+        return {
+            "status": "error",
+            "message": str(e),
+            "symbol": "",
+        }
 
 
 @app.post("/execute-order")

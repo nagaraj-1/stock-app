@@ -7,6 +7,7 @@ import { Settings } from "lucide-react";
 import TradingForm from "@/components/TradingForm";
 import OrderTable from "@/components/OrderTable";
 import SettingsModal from "@/components/SettingsModal";
+import IntradayStocks, { SelectedIntradayStock } from "@/components/IntradayStocks";
 
 import { Order } from "@/types/order";
 import { INVESTMENT_SETTINGS_URL } from "@/config/api";
@@ -14,6 +15,7 @@ import { INVESTMENT_SETTINGS_URL } from "@/config/api";
 export default function Home() {
   const [showSettings, setShowSettings] = useState(false);
   const [orders, setOrders] = useState<Order[]>([]);
+  const [selectedStock, setSelectedStock] = useState<SelectedIntradayStock | null>(null);
   const [investmentSettings, setInvestmentSettings] = useState<Record<string, number>>({});
   const [isSettingsLoading, setIsSettingsLoading] = useState(true);
 
@@ -86,9 +88,14 @@ export default function Home() {
 
       <TradingForm
         setOrders={setOrders}
+        selectedStock={selectedStock}
         investmentSettings={
           investmentSettings
         }
+      />
+
+      <IntradayStocks
+        onSelectStock={setSelectedStock}
       />
 
       <OrderTable
