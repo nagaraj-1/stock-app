@@ -153,9 +153,12 @@ export default function OrderTable({
       defaultSellPercentage
     );
 
-    const amount =
-      getDefaultSellPrice(order).toFixed(2);
-
+const amount = (
+  Math.round(
+    getDefaultSellPrice(order) / 0.10
+  ) * 0.10
+).toFixed(2);
+    
     setSellAmount(amount);
 
     setSellPopup(order);
