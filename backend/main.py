@@ -14,8 +14,12 @@ app = FastAPI()
 BASE_DIR = Path(__file__).resolve().parent
 main_loop = None
 INVESTMENT_FILE = BASE_DIR / "invest.json"
-KITE_API_KEY = "gy6zhrcj24q331y0"
-KITE_API_SECRET = "zwyo86ur9opg5jrd98ajnjypyls5ad2q"
+KITE_CREDENTIALS = {
+    "NAG": {
+        "api_key": "gy6zhrcj24q331y0",
+        "api_secret": "zwyo86ur9opg5jrd98ajnjypyls5ad2q"
+    }
+}
 
 
 def load_investment_settings():
@@ -223,37 +227,67 @@ def save_creds(user: str, api_key: str, secret: str):
 # ==========================================
 
 @app.get("/kiteAuthTokenSave")
-def kite_auth_token_save(request_token: str):
+def kite_auth_token_save(request_token: str, user: str):
+
     try:
-        print("\REQ TOKEN:",request_token)
-        kite = KiteConnect(api_key=KITE_API_KEY)
+
+        user = user.upper()
+
+        print("USER:", user)
+        print("REQ TOKEN:", request_token)
+
+        # =========================
+        # GET USER CREDENTIALS
+        # =========================
+
+        if user not in KITE_CREDENTIALS:
+
+            raise HTTPException(
+                status_code=404,
+                detail=f"User credentials not found: {user}"
+            )
+
+        kite_api_key = KITE_CREDENTIALS[user]["api_key"]
+
+        kite_api_secret = KITE_CREDENTIALS[user]["api_secret"]
+        print("REQ TOKEN:", kite_api_key)
+        # =========================
+        # CREATE KITE SESSION
+        # =========================
+
+        kite = KiteConnect(
+            api_key=kite_api_key
+        )
 
         data = kite.generate_session(
-        request_token,
-        api_secret=KITE_API_SECRET
+            request_token,
+            api_secret=kite_api_secret
         )
 
         access_token = data["access_token"]
-        user = data["user"]
 
-        print("\nACCESS TOKEN:")
-        print(access_token)
+        print("ACCESS TOKEN:", access_token)
 
-        with open("access_token-"+user+".txt", "w") as f:
+        # =========================
+        # SAVE ACCESS TOKEN
+        # =========================
+
+        with open(f"access_token-{user}.txt", "w") as f:
             f.write(access_token)
 
         return {
             "status": "success",
-            "message": "Request token and access token saved.",
-            "request_token": request_token,
+            "message": "Access token saved successfully",
+            "user": user,
+            "request_token": request_token
         }
 
     except Exception as e:
+
         raise HTTPException(
             status_code=500,
             detail=str(e)
         )
-
 # ==========================================
 # RUN LIVE PROCESS
 # ==========================================
