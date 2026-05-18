@@ -108,7 +108,7 @@ try:
     price=0,
     trigger_price=price,
 
-    market_protection=2,   # 2% protection
+    market_protection=0.2,   # 2% protection
 
     validity=kite.VALIDITY_DAY,
     tag=order_reference_id
