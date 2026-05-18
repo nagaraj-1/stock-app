@@ -15,10 +15,11 @@ order_reference_id = "SLM" + datetime.now().strftime("%Y%m%d%H%M%S")
 # ==========================================
 # API
 # ==========================================
-if len(sys.argv) < 6:
-    raise RuntimeError("Usage: python3 grow.py ACTION SYMBOL QTY PRICE USER")
+if(len(sys.argv) > 4):
+    API_USER = sys.argv[5].strip().upper()
+else:
+    API_USER = sys.argv[3].strip().upper()
 
-API_USER = sys.argv[5].strip().upper()
 API_KEY, API_SECRET = get_groww_credentials(API_USER)
 
 if not API_KEY or not API_SECRET:
