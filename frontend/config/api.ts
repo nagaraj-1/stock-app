@@ -1,7 +1,7 @@
 const rawApiHost =
   process.env.NEXT_PUBLIC_API_HOST
     ?.trim()
-    .replace(/\/+$/g, "") || "localhost:8000";
+    .replace(/\/+$/g, "") || "stock.eatoo.in/api";
 
 const apiHost = rawApiHost;
 
@@ -14,14 +14,16 @@ const normalizedApiBase = apiHost
   : "";
 
 export const API_PREFIX = normalizedApiBase
-  ? `${normalizedApiBase}`
+  ? normalizedApiBase.replace(/\/?$/, "").endsWith("/api")
+    ? normalizedApiBase
+    : `${normalizedApiBase.replace(/\/+$|\/$/, "")}/api`
   : "/api";
 
 export const INVESTMENT_SETTINGS_URL =
   `${API_PREFIX}/investment-settings`;
 
 const normalizedWsBase = normalizedApiBase
-  ? normalizedApiBase.replace(/^http/, "ws").split("/").slice(0, 3).join("/")
+  ? normalizedApiBase.replace(/^http/, "ws")
   : "";
 
 export const WS_URL =
