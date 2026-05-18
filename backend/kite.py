@@ -96,23 +96,20 @@ try:
 
         # BUY STOPLOSS MARKET
 
-        order_id = kite.place_order(
+      order_id = kite.place_order(
     variety=kite.VARIETY_REGULAR,
     exchange=kite.EXCHANGE_NSE,
     tradingsymbol=symbol,
     transaction_type=transaction_type,
     quantity=qty,
     product=kite.PRODUCT_MIS,
-    
-    # Changed to Stoploss Market order
+
     order_type=kite.ORDER_TYPE_SLM,
-    
-    # For SL-M orders, price should be 0 
     price=0,
-    
-    # The order will trigger and execute at market when this price is hit
-    trigger_price=price, 
-    
+    trigger_price=price,
+
+    market_protection=2,   # 2% protection
+
     validity=kite.VALIDITY_DAY,
     tag=order_reference_id
 )
