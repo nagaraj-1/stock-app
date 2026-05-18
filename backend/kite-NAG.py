@@ -9,7 +9,7 @@ API_KEY = "gy6zhrcj24q331y0"
 # LOGIN
 # ==========================================
 
-with open("access_token.txt") as f:
+with open("access_token-NAG.txt") as f:
     access_token = f.read().strip()
 
 kite = KiteConnect(api_key=API_KEY)

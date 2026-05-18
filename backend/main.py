@@ -222,7 +222,7 @@ def save_creds(user: str, api_key: str, secret: str):
 # KITE AUTH TOKEN SAVE
 # ==========================================
 
-@app.get("/kiteAuthTokenSaveNAG")
+@app.get("/kiteAuthTokenSave")
 def kite_auth_token_save(request_token: str):
     try:
         
