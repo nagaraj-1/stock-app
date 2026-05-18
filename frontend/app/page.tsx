@@ -94,13 +94,15 @@ export default function Home() {
         }
       />
 
-      <IntradayStocks
-        onSelectStock={setSelectedStock}
-      />
+     
 
       <OrderTable
         orders={orders}
         setOrders={setOrders}
+      />
+
+       <IntradayStocks
+        onSelectStock={setSelectedStock}
       />
 
       <SettingsModal

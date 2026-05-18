@@ -179,7 +179,8 @@ def main():
     buy_price = float(sys.argv[3])
     order_id = sys.argv[4]
 
-    sell_price = round(buy_price * 1.017, 2)
+    sell_price = round(round(buy_price * 1.017 / 0.05) * 0.05, 2)
+
     log(f"TARGET SELL PRICE CALCULATED: {sell_price}")
 
     # =======================================================
@@ -246,7 +247,7 @@ def main():
         # ---------------------------------------------------
         start_time = time.time()
 
-        while time.time() - start_time < 120:
+        while time.time() - start_time < 1800:
             current_price = get_ltp(stock_symbol)
 
             if current_price is None:
@@ -295,39 +296,11 @@ def main():
             
             time.sleep(1)
 
-        # ---------------------------------------------------
-        # STEP C
-        # CHECK PROFIT FOR NEXT 120 SECONDS
-        # ---------------------------------------------------
-        start_time = time.time()
-
-        while time.time() - start_time < 120:
-            current_price = get_ltp(stock_symbol)
-
-            if current_price is None:
-                log("FAILED TO GET LTP")
-                time.sleep(5)
-                continue
-
-            profit = (current_price - actual_buy_price) * quantity
-            log(f"CURRENT PROFIT = {round(profit, 2)}")
-
-            # ---------------------------------------------------
-            # PROFIT POSITIVE -> MARKET SELL
-            # ---------------------------------------------------
-            if profit > 0:
-                log("PROFIT POSITIVE SELLING")
-                place_sell_order(stock_symbol, quantity)
-                sys.exit(0)
-
-            time.sleep(1)
-
+       
         # ---------------------------------------------------
         # NO PROFIT AFTER TIME ELAPSED
         # ---------------------------------------------------
-        log("NO PROFIT AFTER TIME ELAPSED")
-        log("EXITING TRADE WITH MARKET SELL")
-        place_sell_order(stock_symbol, quantity)
+   
         sys.exit(0)
 
 # ===========================================================

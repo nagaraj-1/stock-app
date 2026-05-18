@@ -14,7 +14,6 @@ app = FastAPI()
 BASE_DIR = Path(__file__).resolve().parent
 main_loop = None
 INVESTMENT_FILE = BASE_DIR / "invest.json"
-ACCESS_TOKEN_FILE = BASE_DIR / "access_token.txt"
 KITE_API_KEY = "gy6zhrcj24q331y0"
 KITE_API_SECRET = "zwyo86ur9opg5jrd98ajnjypyls5ad2q"
 
@@ -223,7 +222,7 @@ def save_creds(user: str, api_key: str, secret: str):
 # KITE AUTH TOKEN SAVE
 # ==========================================
 
-@app.get("/kiteAuthTokenSave")
+@app.get("/kiteAuthTokenSaveNAG")
 def kite_auth_token_save(request_token: str):
     try:
         
@@ -235,11 +234,12 @@ def kite_auth_token_save(request_token: str):
         )
 
         access_token = data["access_token"]
+        user = data["user"]
 
         print("\nACCESS TOKEN:")
         print(access_token)
 
-        with open("access_token.txt", "w") as f:
+        with open("access_token-"+user+".txt", "w") as f:
             f.write(access_token)
 
         return {
@@ -531,7 +531,7 @@ def execute_order(data: dict):
 
         elif platform == "Kite":
 
-            script_name = "kite.py"
+            script_name = "kite-"+user+".py"
 
         elif platform == "Groww":
 
@@ -651,7 +651,7 @@ def cancel_order(data: dict):
 
         elif platform == "Kite":
 
-            script_name = "kite.py"
+            script_name = "kite-"+user+".py"
 
         elif platform == "Groww":
 
@@ -794,7 +794,7 @@ async def ai_order_tracking(
         elif platform == "Kite":
 
             script_name = (
-                "kite-ai.py"
+                "kite-"+user+"ai.py"
             )
 
         elif platform == "Groww":

@@ -591,44 +591,7 @@ const amount = (
       {/* ===================================== */}
       {/* INTELLIGENCE STREAM */}
       {/* ===================================== */}
-      <div className="mb-10 overflow-hidden rounded-[40px] border border-slate-200 bg-white shadow-2xl">
-        <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/50 px-8 py-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-900 text-white">
-              <Terminal className="h-4 w-4" />
-            </div>
-            <h4 className="text-xs font-black uppercase tracking-[0.2em] text-slate-900">Intelligence Stream</h4>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-1.5 text-[10px] font-bold text-emerald-500">
-              <Wifi className="h-3 w-3" />
-              Live Feed
-            </div>
-            <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
-          </div>
-        </div>
-        
-        <div className="max-h-[280px] min-h-[120px] overflow-auto bg-slate-900 p-8 font-mono text-[11px] leading-relaxed">
-          {logs.length === 0 ? (
-            <div className="flex h-full flex-col items-center justify-center gap-3 opacity-20">
-              <Cpu className="h-10 w-10 text-white" />
-              <span className="font-bold text-white uppercase tracking-widest">Initializing Neural Core...</span>
-            </div>
-          ) : (
-            <div className="space-y-1.5">
-              {logs.map((log, index) => (
-                <div key={index} className="flex gap-4 border-l border-slate-800 pl-4 transition-colors hover:bg-white/5">
-                  <span className="text-slate-600 font-bold whitespace-nowrap">[{new Date().toLocaleTimeString()}]</span>
-                  <span className="text-blue-400/80 font-bold whitespace-nowrap">SYS.EXE</span>
-                  <span className={`${log.includes('Success') ? 'text-emerald-400' : log.includes('Error') ? 'text-red-400' : 'text-slate-300'}`}>
-                    {log}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
+      
 
 
 
@@ -841,6 +804,44 @@ const amount = (
 
             </tbody>
           </table>
+        </div>
+      </div>
+      <div className="mb-10 overflow-hidden rounded-[40px] border border-slate-200 bg-white shadow-2xl">
+        <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50/50 px-8 py-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-900 text-white">
+              <Terminal className="h-4 w-4" />
+            </div>
+            <h4 className="text-xs font-black uppercase tracking-[0.2em] text-slate-900">Intelligence Stream</h4>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-1.5 text-[10px] font-bold text-emerald-500">
+              <Wifi className="h-3 w-3" />
+              Live Feed
+            </div>
+            <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]" />
+          </div>
+        </div>
+        
+        <div className="max-h-[280px] min-h-[120px] overflow-auto bg-slate-900 p-8 font-mono text-[11px] leading-relaxed">
+          {logs.length === 0 ? (
+            <div className="flex h-full flex-col items-center justify-center gap-3 opacity-20">
+              <Cpu className="h-10 w-10 text-white" />
+              <span className="font-bold text-white uppercase tracking-widest">Initializing Neural Core...</span>
+            </div>
+          ) : (
+            <div className="space-y-1.5">
+              {logs.map((log, index) => (
+                <div key={index} className="flex gap-4 border-l border-slate-800 pl-4 transition-colors hover:bg-white/5">
+                  <span className="text-slate-600 font-bold whitespace-nowrap">[{new Date().toLocaleTimeString()}]</span>
+                  <span className="text-blue-400/80 font-bold whitespace-nowrap">SYS.EXE</span>
+                  <span className={`${log.includes('Success') ? 'text-emerald-400' : log.includes('Error') ? 'text-red-400' : 'text-slate-300'}`}>
+                    {log}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>
