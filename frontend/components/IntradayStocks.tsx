@@ -100,14 +100,12 @@ export default function IntradayStocks({
       );
       const data = await response.json();
 
-      if (!response.ok || data.status !== "success" || !data.symbol) {
-        onSelectStock(selectedStock);
-        return;
-      }
+     console.log(data)
 
+   
       onSelectStock({
         ...selectedStock,
-        symbol: String(data.symbol).toUpperCase(),
+        symbol: String(data).toUpperCase(),
       });
     } catch (err) {
       console.error(err);

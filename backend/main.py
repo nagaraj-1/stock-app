@@ -461,12 +461,6 @@ def get_intraday_stocks():
 def get_stock_symbol(stock_name: str):
     try:
         node_script = BASE_DIR / "symbol.js"
-        if not node_script.exists():
-            return {
-                "status": "error",
-                "message": "symbol.js not found in backend folder.",
-                "symbol": "",
-            }
 
         process = subprocess.run(
             ["node", str(node_script), stock_name],
@@ -477,47 +471,22 @@ def get_stock_symbol(stock_name: str):
         )
 
         output = process.stdout.strip()
-        error_output = process.stderr.strip()
+
         json_line = ""
 
         for line in reversed(output.splitlines()):
             line = line.strip()
+
             if line.startswith("{"):
                 json_line = line
                 break
 
-        if not json_line:
-            return {
-                "status": "error",
-                "message": "symbol.js did not return JSON.",
-                "output": output,
-                "error": error_output,
-                "symbol": "",
-            }
-
         result = json.loads(json_line)
 
-        if result.get("status") != "success" or process.returncode != 0:
-            return {
-                "status": "error",
-                "message": result.get("message", "symbol.js failed."),
-                "output": output,
-                "error": error_output,
-                "symbol": "",
-            }
+        return result.get("symbol", "")
 
-        return {
-            "status": "success",
-            "symbol": result.get("symbol", ""),
-            "output": output,
-        }
     except Exception as e:
-        return {
-            "status": "error",
-            "message": str(e),
-            "symbol": "",
-        }
-
+        return str(e)
 
 @app.post("/execute-order")
 def execute_order(data: dict):

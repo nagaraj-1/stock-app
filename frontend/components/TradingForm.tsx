@@ -55,7 +55,7 @@ export default function TradingForm({
   // LIVE CALCULATIONS
   // ====================================
   const tradeSummary = useMemo(() => {
-    const targetPercentage = 15.51;
+    const targetPercentage = 15.56;
     const amount = investmentSettings[`${selectedUser}-${selectedPlatform}`] ?? 0;
     const finalPrice = Number(
   (Math.round(

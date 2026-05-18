@@ -1,7 +1,7 @@
 const rawApiHost =
   process.env.NEXT_PUBLIC_API_HOST
     ?.trim()
-    .replace(/\/+$/g, "") || "stock.eatoo.in/api";
+    .replace(/\/+$/g, "") || "localhost:8000";
  
 const apiHost = rawApiHost;
 
