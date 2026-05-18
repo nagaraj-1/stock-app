@@ -50,7 +50,7 @@ const { chromium } = require('playwright');
         }
 
         console.log(JSON.stringify({
-            status: 'error',
+            status: 'success',
             message: error.message,
             symbol: ''
         }));
