@@ -297,34 +297,70 @@ def run_live_process(command):
 
 @app.get("/intraday-stocks")
 def get_intraday_stocks():
+
     try:
+
+        # ==========================================
+        # NODE SCRIPT PATH
+        # ==========================================
+
         node_script = BASE_DIR / "grow.js"
+
         if not node_script.exists():
+
             return {
                 "status": "error",
                 "message": "grow.js not found in backend folder.",
                 "data": [],
             }
 
+        # ==========================================
+        # RUN NODE SCRIPT
+        # ==========================================
+
         process = subprocess.run(
             ["node", str(node_script)],
             cwd=BASE_DIR,
             capture_output=True,
             text=True,
-            timeout=90000,
+            timeout=90,
         )
 
         output = process.stdout.strip()
+
         error_output = process.stderr.strip()
+
+        # ==========================================
+        # DEBUG
+        # ==========================================
+
+        print("RETURN CODE:", process.returncode)
+
+        if error_output:
+            print("STDERR:", error_output)
+
+        # ==========================================
+        # FIND JSON LINE
+        # ==========================================
+
         json_line = ""
 
         for line in reversed(output.splitlines()):
+
             line = line.strip()
-            if line.startswith("{"):
+
+            if line.startswith("{") and line.endswith("}"):
+
                 json_line = line
+
                 break
 
+        # ==========================================
+        # NO JSON
+        # ==========================================
+
         if not json_line:
+
             return {
                 "status": "error",
                 "message": "grow.js did not return JSON.",
@@ -333,39 +369,87 @@ def get_intraday_stocks():
                 "data": [],
             }
 
+        # ==========================================
+        # PARSE JSON
+        # ==========================================
+
         result = json.loads(json_line)
+
         data = result.get("data", [])
 
-        if result.get("status") != "success" or process.returncode != 0:
+        # ==========================================
+        # NODE ERROR
+        # ==========================================
+
+        if result.get("status") != "success":
+
             return {
                 "status": "error",
-                "message": result.get("message", "grow.js failed."),
+                "message": result.get(
+                    "message",
+                    "grow.js failed."
+                ),
                 "output": output,
                 "error": error_output,
                 "data": data,
             }
 
-        headers = ["Stock", "Symbol", "LTP", "Change", "Volume", "Extra"]
-        rows = [
-            [
+        # ==========================================
+        # TABLE HEADERS
+        # ==========================================
+
+        headers = [
+            "Stock",
+            "Symbol",
+            "LTP",
+            "Change",
+        ]
+
+        # ==========================================
+        # TABLE ROWS
+        # ==========================================
+
+        rows = []
+
+        for stock in data:
+
+            rows.append([
                 stock.get("stock", ""),
                 stock.get("symbol", ""),
                 stock.get("ltp", ""),
                 stock.get("change", ""),
-                stock.get("volume", ""),
-                stock.get("extra", ""),
-            ]
-            for stock in data
-        ]
+            ])
+
+        # ==========================================
+        # SUCCESS
+        # ==========================================
 
         return {
             "status": "success",
             "data": data,
-            "output": output,
             "headers": headers,
             "rows": rows,
+            "output": output,
         }
+
+    except subprocess.TimeoutExpired:
+
+        return {
+            "status": "error",
+            "message": "grow.js timeout exceeded.",
+            "data": [],
+        }
+
+    except json.JSONDecodeError as e:
+
+        return {
+            "status": "error",
+            "message": f"Invalid JSON: {str(e)}",
+            "data": [],
+        }
+
     except Exception as e:
+
         return {
             "status": "error",
             "message": str(e),
