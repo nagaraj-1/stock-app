@@ -139,7 +139,7 @@ export default function OrderTable({
     );
   };
 
-  const openSellPopup = (
+  const openSellPopup = async (
     order: Order
   ) => {
     console.log(order.price);
@@ -153,12 +153,13 @@ export default function OrderTable({
       defaultSellPercentage
     );
 
-const amount = (
-  Math.round(
-    getDefaultSellPrice(order) / 0.10
-  ) * 0.10
-).toFixed(2);
+
     
+ const response = await fetch(
+          `${API_PREFIX}/stock-price-rounding?price=${getDefaultSellPrice(order)}`
+        );
+        const amount = await response.json();
+
     setSellAmount(amount);
 
     setSellPopup(order);
@@ -329,8 +330,11 @@ const amount = (
         order.id
       );
 
-      const targetPrice =
-        getDefaultSellPrice(order);
+        const response = await fetch(
+          `${API_PREFIX}/stock-price-rounding?price=${getDefaultSellPrice(order)}`
+        );
+        const targetPrice = await response.json();
+
 
       setSellPercentage(defaultSellPercentage);
       setSellAmount(targetPrice.toFixed(2));
@@ -539,12 +543,16 @@ const amount = (
                   <input
                     type="number"
                     value={sellPercentage}
-                    onChange={(e) => {
+                    onChange={async (e) => {
                       const value = Number(e.target.value);
                       setSellPercentage(value);
                       const currentPercentage = Number(sellPopup.percentage || 0);
                       const amount = ((Number(sellPopup.price) / (1 + currentPercentage / 100)) * (1 + value / 100)).toFixed(2);
-                      setSellAmount(amount);
+                      const response = await fetch(
+          `${API_PREFIX}/stock-price-rounding?price=${amount}`
+        );
+
+                      setSellAmount(await response.json());
                     }}
                     className="block w-full bg-transparent text-xl font-black text-blue-600 outline-none"
                   />

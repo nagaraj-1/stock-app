@@ -8,6 +8,7 @@ import subprocess
 import asyncio
 from kiteconnect import KiteConnect
 from credentials import load_credentials, save_credentials, get_groww_credentials
+import math
 
 app = FastAPI()
 
@@ -879,7 +880,10 @@ async def ai_order_tracking(
 # ==========================================
 # STOP TRACKING
 # ==========================================
-
+@app.get("/stock-price-rounding")
+def round_stock_price(price: float, tick_size: float = 0.05) -> float:
+   
+    return round(round(price / tick_size) * tick_size, 2)
 
 @app.post("/stop-tracking")
 def stop_tracking(data: dict):

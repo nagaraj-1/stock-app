@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
   Loader2,
@@ -35,6 +35,13 @@ export default function TradingForm({
   const [selectedUser, setSelectedUser] = useState("NAG");
   const [selectedPlatform, setSelectedPlatform] = useState("Groww");
   const [loading, setLoading] = useState(false);
+  const [hoverTarget, setHoverTarget] = useState(false);
+  const [editingTarget, setEditingTarget] = useState(false);
+  const [targetInput, setTargetInput] = useState<number | string>("");
+
+  const [hoverQty, setHoverQty] = useState(false);
+  const [editingQty, setEditingQty] = useState(false);
+  const [qtyInput, setQtyInput] = useState<number | string>("");
 
   useEffect(() => {
     if (selectedStock) {
@@ -54,23 +61,81 @@ export default function TradingForm({
   // ====================================
   // LIVE CALCULATIONS
   // ====================================
-  const tradeSummary = useMemo(() => {
-    const targetPercentage = 15.56;
-    const amount = investmentSettings[`${selectedUser}-${selectedPlatform}`] ?? 0;
-    const finalPrice = Number(
-  (Math.round(
-    (((price / (1 + percentage / 100)) *
-      (1 + targetPercentage / 100)) / 0.10)
-  ) * 0.10).toFixed(2)
-);
-    const qty = Math.floor(amount / (finalPrice / 5));
+  const [tradeSummary, setTradeSummary] = useState<{
+    amount: number;
+    finalPrice: number;
+    qty: number;
+    targetPercentage: number;
+  }>({ amount: 0, finalPrice: 0, qty: 0, targetPercentage: 0 });
 
-    return { amount, finalPrice, qty, targetPercentage };
+  useEffect(() => {
+    let mounted = true;
+
+    const compute = async () => {
+      try {
+        const targetPercentage = 15.56;
+        const amount = investmentSettings[`${selectedUser}-${selectedPlatform}`] ?? 0;
+
+        const priceCal = Number(
+          (
+            Math.round(
+              (((price / (1 + percentage / 100)) * (1 + targetPercentage / 100)) / 0.1)
+            ) * 0.1
+          ).toFixed(2)
+        );
+
+        const response = await fetch(
+          `${API_PREFIX}/stock-price-rounding?price=${priceCal}`
+        );
+        const finalPrice = await response.json();
+
+        const qty = Math.floor(amount / (finalPrice / 5));
+
+        if (mounted) setTradeSummary({ amount, finalPrice, qty, targetPercentage });
+      } catch (err) {
+        console.error("Failed to compute trade summary:", err);
+      }
+    };
+
+    compute();
+
+    return () => {
+      mounted = false;
+    };
   }, [price, percentage, selectedUser, selectedPlatform, investmentSettings]);
+
+  // Sync editable inputs when tradeSummary changes (unless currently editing)
+  useEffect(() => {
+    if (!editingTarget) setTargetInput(tradeSummary.finalPrice ?? "");
+  }, [tradeSummary.finalPrice, editingTarget]);
+
+  useEffect(() => {
+    if (!editingQty) setQtyInput(tradeSummary.qty ?? "");
+  }, [tradeSummary.qty, editingQty]);
 
   /* =========================
      EXECUTE ORDER
   ========================= */
+
+  const handleTargetBlur = () => {
+    const parsed = Number(targetInput);
+    if (!isNaN(parsed) && parsed > 0) {
+      const newFinal = parsed;
+      const newQty = Math.floor(tradeSummary.amount / (newFinal / 5)) || 0;
+      setTradeSummary((prev) => ({ ...prev, finalPrice: newFinal, qty: newQty }));
+    }
+    setEditingTarget(false);
+    setHoverTarget(false);
+  };
+
+  const handleQtyBlur = () => {
+    const parsed = Math.floor(Number(qtyInput));
+    if (!isNaN(parsed) && parsed >= 0) {
+      setTradeSummary((prev) => ({ ...prev, qty: parsed }));
+    }
+    setEditingQty(false);
+    setHoverQty(false);
+  };
 
   const executeOrder = async () => {
     try {
@@ -212,15 +277,53 @@ export default function TradingForm({
                   <div className="text-lg font-black text-slate-900">₹{tradeSummary.amount.toLocaleString()}</div>
                 </div>
 
-                <div className="flex items-center justify-between p-4 rounded-2xl bg-white border border-slate-200">
+                <div
+                  className="flex items-center justify-between p-4 rounded-2xl bg-white border border-slate-200"
+                  onMouseEnter={() => setHoverTarget(true)}
+                  onMouseLeave={() => { if (!editingTarget) setHoverTarget(false); }}
+                >
                   <div className="text-sm font-bold text-slate-500">Target Price</div>
-                  <div className="text-lg font-black text-blue-600">₹{tradeSummary.finalPrice}</div>
+                  <div className="text-lg font-black text-blue-600">
+                    {hoverTarget || editingTarget ? (
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={targetInput as any}
+                        onChange={(e) => setTargetInput(e.target.value)}
+                        onFocus={() => setEditingTarget(true)}
+                        onBlur={handleTargetBlur}
+                        onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+                        className="h-10 w-36 rounded-xl border border-slate-200 bg-slate-50 px-3 text-right font-black text-blue-600 outline-none"
+                      />
+                    ) : (
+                      <>
+                        ₹{tradeSummary.finalPrice}
+                      </>
+                    )}
+                  </div>
                 </div>
 
-                <div className="relative overflow-hidden p-6 rounded-3xl bg-slate-900 text-white shadow-xl">
+                <div
+                  className="relative overflow-hidden p-6 rounded-3xl bg-slate-900 text-white shadow-xl"
+                  onMouseEnter={() => setHoverQty(true)}
+                  onMouseLeave={() => { if (!editingQty) setHoverQty(false); }}
+                >
                   <div className="relative z-10">
                     <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Buy Quantity</div>
-                    <div className="text-4xl font-black">{tradeSummary.qty}</div>
+                    {hoverQty || editingQty ? (
+                      <input
+                        type="number"
+                        step="1"
+                        value={qtyInput as any}
+                        onChange={(e) => setQtyInput(e.target.value)}
+                        onFocus={() => setEditingQty(true)}
+                        onBlur={handleQtyBlur}
+                        onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+                    className="text-4xl w-full max-w-[200px] font-black text-white bg-slate-800 rounded-md p-2 text-center"
+                        />
+                    ) : (
+                      <div className="text-4xl font-black">{tradeSummary.qty}</div>
+                    )}
                   </div>
                   <div className="absolute -right-4 -bottom-4 text-white/5">
                     <TrendingUp className="h-32 w-32" />

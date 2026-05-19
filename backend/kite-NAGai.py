@@ -1,8 +1,10 @@
 import sys
 import time
+from urllib import response
 import uuid
 from datetime import datetime
 from kiteconnect import KiteConnect
+import requests
 
 # ===========================================================
 # GLOBALS & CONFIGURATION
@@ -179,7 +181,24 @@ def main():
     buy_price = float(sys.argv[3])
     order_id = sys.argv[4]
 
-    sell_price = round(round(buy_price * 1.017 / 0.05) * 0.05, 2)
+    current_percentage = 15.56
+    target_percentage = 17
+
+    sell_price = (
+        (buy_price / (1 + current_percentage / 100)) *
+        (1 + target_percentage / 100),
+        2
+    )
+
+    response = requests.get(
+    "http://127.0.0.1:8000/stock-price-rounding",
+    params={
+        "price": sell_price
+    }
+)
+
+    sell_price  = response.json()
+
 
     log(f"TARGET SELL PRICE CALCULATED: {sell_price}")
 
@@ -270,7 +289,7 @@ def main():
                 # ----------------------------------------
                 # WAIT 10 SECONDS FOR LIMIT SELL EXECUTION
                 # ----------------------------------------
-                time.sleep(10)
+                time.sleep(3)
 
                 sell_order = check_order_status(sell_order_id)
 
@@ -285,14 +304,7 @@ def main():
                         log("LIMIT SELL EXECUTED SUCCESSFULLY")
                         sys.exit(0)
 
-                # ----------------------------------------
-                # LIMIT SELL NOT EXECUTED -> MARKET SELL
-                # ----------------------------------------
-                log("LIMIT SELL NOT EXECUTED IN 10 SECONDS")
-                cancel_order(sell_order_id)
-                log("PLACING MARKET SELL")
-                place_sell_order(stock_symbol, quantity)
-                sys.exit(0)
+              
             
             time.sleep(1)
 
