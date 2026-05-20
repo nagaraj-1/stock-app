@@ -35,6 +35,14 @@ export default function TradingForm({
   const [selectedUser, setSelectedUser] = useState("NAG");
   const [selectedPlatform, setSelectedPlatform] = useState("Groww");
   const [loading, setLoading] = useState(false);
+
+  // States for summary metrics (Now fully dynamic and editable)
+  const [budget, setBudget] = useState<number>(0);
+  const [finalPrice, setFinalPrice] = useState<number>(0);
+  const [qty, setQty] = useState<number>(0);
+  const [targetPercentage, setTargetPercentage] = useState<number>(15.56);
+
+  // Hover & Editing Controls
   const [hoverTarget, setHoverTarget] = useState(false);
   const [editingTarget, setEditingTarget] = useState(false);
   const [targetInput, setTargetInput] = useState<number | string>("");
@@ -43,6 +51,7 @@ export default function TradingForm({
   const [editingQty, setEditingQty] = useState(false);
   const [qtyInput, setQtyInput] = useState<number | string>("");
 
+  // Sync selection from incoming selected stock element
   useEffect(() => {
     if (selectedStock) {
       const timer = window.setTimeout(() => {
@@ -57,41 +66,47 @@ export default function TradingForm({
     }
   }, [selectedStock]);
 
-  
   // ====================================
-  // LIVE CALCULATIONS
+  // LIVE FORMULA AUTO-CALCULATIONS
   // ====================================
-  const [tradeSummary, setTradeSummary] = useState<{
-    amount: number;
-    finalPrice: number;
-    qty: number;
-    targetPercentage: number;
-  }>({ amount: 0, finalPrice: 0, qty: 0, targetPercentage: 0 });
-
   useEffect(() => {
     let mounted = true;
 
     const compute = async () => {
       try {
-        const targetPercentage = 15.56;
-        const amount = investmentSettings[`${selectedUser}-${selectedPlatform}`] ?? 0;
+        const currentTargetPercentage = 15.56;
+        const currentAmount = investmentSettings[`${selectedUser}-${selectedPlatform}`] ?? 0;
 
+        // Calculate expected mathematical rounded value
         const priceCal = Number(
           (
             Math.round(
-              (((price / (1 + percentage / 100)) * (1 + targetPercentage / 100)) / 0.1)
+              (((price / (1 + percentage / 100)) * (1 + currentTargetPercentage / 100)) / 0.1)
             ) * 0.1
           ).toFixed(2)
         );
 
+        // Fetch official API rounded price context
         const response = await fetch(
           `${API_PREFIX}/stock-price-rounding?price=${priceCal}`
         );
-        const finalPrice = await response.json();
+        const apiFinalPrice = await response.json();
+        const computedQty = Math.floor(currentAmount / (apiFinalPrice / 5));
 
-        const qty = Math.floor(amount / (finalPrice / 5));
-
-        if (mounted) setTradeSummary({ amount, finalPrice, qty, targetPercentage });
+        if (mounted) {
+          setBudget(currentAmount);
+          setTargetPercentage(currentTargetPercentage);
+          
+          // Only automatically overwrite outputs if user isn't custom-editing values
+          if (!editingTarget) {
+            setFinalPrice(apiFinalPrice);
+            setTargetInput(apiFinalPrice);
+          }
+          if (!editingQty) {
+            setQty(computedQty);
+            setQtyInput(computedQty);
+          }
+        }
       } catch (err) {
         console.error("Failed to compute trade summary:", err);
       }
@@ -104,44 +119,41 @@ export default function TradingForm({
     };
   }, [price, percentage, selectedUser, selectedPlatform, investmentSettings]);
 
-  // Sync editable inputs when tradeSummary changes (unless currently editing)
-  useEffect(() => {
-    if (!editingTarget) setTargetInput(tradeSummary.finalPrice ?? "");
-  }, [tradeSummary.finalPrice, editingTarget]);
-
-  useEffect(() => {
-    if (!editingQty) setQtyInput(tradeSummary.qty ?? "");
-  }, [tradeSummary.qty, editingQty]);
-
   /* =========================
-     EXECUTE ORDER
+     BLUR HANDLING & COMMITS
   ========================= */
-
   const handleTargetBlur = () => {
-    const parsed = Number(targetInput);
-    if (!isNaN(parsed) && parsed > 0) {
-      const newFinal = parsed;
-      const newQty = Math.floor(tradeSummary.amount / (newFinal / 5)) || 0;
-      setTradeSummary((prev) => ({ ...prev, finalPrice: newFinal, qty: newQty }));
+    const parsedPrice = Number(targetInput);
+    if (!isNaN(parsedPrice) && parsedPrice > 0) {
+      setFinalPrice(parsedPrice);
+      // Recalculate quantity based on the manually typed target price
+      const freshQty = Math.floor(budget / (parsedPrice / 5)) || 0;
+      setQty(freshQty);
+      setQtyInput(freshQty);
+    } else {
+      setTargetInput(finalPrice);
     }
     setEditingTarget(false);
     setHoverTarget(false);
   };
 
   const handleQtyBlur = () => {
-    const parsed = Math.floor(Number(qtyInput));
-    if (!isNaN(parsed) && parsed >= 0) {
-      setTradeSummary((prev) => ({ ...prev, qty: parsed }));
+    const parsedQty = Math.floor(Number(qtyInput));
+    if (!isNaN(parsedQty) && parsedQty >= 0) {
+      setQty(parsedQty);
+    } else {
+      setQtyInput(qty);
     }
     setEditingQty(false);
     setHoverQty(false);
   };
 
+  /* =========================
+     EXECUTE ORDER ACTION
+  ========================= */
   const executeOrder = async () => {
     try {
       setLoading(true);
-
-      const { amount, finalPrice, qty, targetPercentage } = tradeSummary;
 
       const response = await fetch(`${API_PREFIX}/execute-order`, {
         method: "POST",
@@ -170,7 +182,7 @@ export default function TradingForm({
         finalPrice: Number(finalPrice.toFixed(2)),
         user: selectedUser,
         platform: selectedPlatform,
-        amount,
+        amount: budget,
         percentage: Number(targetPercentage.toFixed(2)),
         status: "Executed",
         date: now.toLocaleDateString(),
@@ -185,176 +197,177 @@ export default function TradingForm({
     }
   };
 
-  
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: 15 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="overflow-hidden rounded-[40px] border border-slate-200 bg-white shadow-2xl"
-      >
-        <div className="flex flex-col lg:flex-row">
-          {/* Left Side: Form */}
-          <div className="flex-1 p-6 md:p-10 space-y-8">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-white shadow-lg shadow-blue-200">
-                <TrendingUp className="h-5 w-5" />
-              </div>
-              <h2 className="text-2xl font-black text-slate-900">Trade Setup</h2>
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 15 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="overflow-hidden rounded-[40px] border border-slate-200 bg-white shadow-2xl"
+    >
+      <div className="flex flex-col lg:flex-row">
+        {/* Left Side: Input Workspace Form */}
+        <div className="flex-1 p-6 md:p-10 space-y-8">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-white shadow-lg shadow-blue-200">
+              <TrendingUp className="h-5 w-5" />
             </div>
+            <h2 className="text-2xl font-black text-slate-900">Trade Setup</h2>
+          </div>
 
-            <div className="grid gap-8">
-              {/* Row 1: Asset Details */}
-              <section className="space-y-4">
-                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-slate-400">
-                  <Tag className="h-3 w-3" />
-                  Asset Details
+          <div className="grid gap-8">
+            {/* Row 1: Asset Details */}
+            <section className="space-y-4">
+              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-slate-400">
+                <Tag className="h-3 w-3" />
+                Asset Details
+              </div>
+              <div className="grid gap-4 sm:grid-cols-3">
+                <div>
+                  <label className="mb-2 block text-xs font-bold text-slate-500 uppercase">Symbol</label>
+                  <input
+                    value={symbol}
+                    onChange={(e) => setSymbol(e.target.value.toUpperCase())}
+                    onFocus={(e) => e.target.select()}
+                    className="h-14 w-full rounded-2xl border-2 border-slate-100 bg-slate-50 px-5 text-lg font-black text-slate-900 outline-none transition-all focus:border-blue-500 focus:bg-white"
+                  />
                 </div>
-                <div className="grid gap-4 sm:grid-cols-3">
-                  <div>
-                    <label className="mb-2 block text-xs font-bold text-slate-500 uppercase">Symbol</label>
-                    <input
-                      value={symbol}
-                      onChange={(e) => setSymbol(e.target.value.toUpperCase())}
-                      onFocus={(e) => e.target.select()}
-                      className="h-14 w-full rounded-2xl border-2 border-slate-100 bg-slate-50 px-5 text-lg font-black text-slate-900 outline-none transition-all focus:border-blue-500 focus:bg-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-2 block text-xs font-bold text-slate-500 uppercase">Price</label>
-                    <div className="relative">
-                      <IndianRupee className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
-                      <input
-                        type="number"
-                        value={price}
-                        onChange={(e) => setPrice(Number(e.target.value))}
-                        onFocus={(e) => e.target.select()}
-                        className="h-14 w-full rounded-2xl border-2 border-slate-100 bg-slate-50 pl-11 pr-4 text-lg font-black text-slate-900 outline-none transition-all focus:border-blue-500 focus:bg-white"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="mb-2 block text-xs font-bold text-slate-500 uppercase">Offset %</label>
+                <div>
+                  <label className="mb-2 block text-xs font-bold text-slate-500 uppercase">Price</label>
+                  <div className="relative">
+                    <IndianRupee className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400" />
                     <input
                       type="number"
-                      value={percentage}
-                      onChange={(e) => setPercentage(Number(e.target.value))}
+                      value={price}
+                      onChange={(e) => setPrice(Number(e.target.value))}
                       onFocus={(e) => e.target.select()}
-                      className={`h-14 w-full rounded-2xl border-2 px-5 text-lg font-black outline-none transition-all focus:bg-white ${
-                        percentage >= 0
-                          ? "border-emerald-100 bg-emerald-50/50 text-emerald-600 focus:border-emerald-500"
-                          : "border-red-100 bg-red-50/50 text-red-600 focus:border-red-500"
-                      }`}
+                      className="h-14 w-full rounded-2xl border-2 border-slate-100 bg-slate-50 pl-11 pr-4 text-lg font-black text-slate-900 outline-none transition-all focus:border-blue-500 focus:bg-white"
                     />
                   </div>
                 </div>
-              </section>
-
-              {/* Row 2: Account Details */}
-              <section className="space-y-4">
-                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-slate-400">
-                  <Activity className="h-3 w-3" />
-                  Execution Source
+                <div>
+                  <label className="mb-2 block text-xs font-bold text-slate-500 uppercase">Offset %</label>
+                  <input
+                    type="number"
+                    value={percentage}
+                    onChange={(e) => setPercentage(Number(e.target.value))}
+                    onFocus={(e) => e.target.select()}
+                    className={`h-14 w-full rounded-2xl border-2 px-5 text-lg font-black outline-none transition-all focus:bg-white ${
+                      percentage >= 0
+                        ? "border-emerald-100 bg-emerald-50/50 text-emerald-600 focus:border-emerald-500"
+                        : "border-red-100 bg-red-50/50 text-red-600 focus:border-red-500"
+                    }`}
+                  />
                 </div>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <SelectBox label="User" value={selectedUser} options={users} onChange={setSelectedUser} />
-                  <PlatformSelect label="Platform" value={selectedPlatform} options={platforms} onChange={setSelectedPlatform} />
-                </div>
-              </section>
-            </div>
-          </div>
+              </div>
+            </section>
 
-          {/* Right Side: Summary Card */}
-          <div className="w-full lg:w-[380px] bg-slate-50 border-t lg:border-t-0 lg:border-l border-slate-100 p-6 md:p-10 flex flex-col justify-between">
-            <div className="space-y-6">
+            {/* Row 2: Account Details */}
+            <section className="space-y-4">
               <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-slate-400">
-                <Layout className="h-3 w-3" />
-                Trade Summary
+                <Activity className="h-3 w-3" />
+                Execution Source
               </div>
-
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 rounded-2xl bg-white border border-slate-200">
-                  <div className="text-sm font-bold text-slate-500">Budget</div>
-                  <div className="text-lg font-black text-slate-900">₹{tradeSummary.amount.toLocaleString()}</div>
-                </div>
-
-                <div
-                  className="flex items-center justify-between p-4 rounded-2xl bg-white border border-slate-200"
-                  onMouseEnter={() => setHoverTarget(true)}
-                  onMouseLeave={() => { if (!editingTarget) setHoverTarget(false); }}
-                >
-                  <div className="text-sm font-bold text-slate-500">Target Price</div>
-                  <div className="text-lg font-black text-blue-600">
-                    {hoverTarget || editingTarget ? (
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={targetInput as any}
-                        onChange={(e) => setTargetInput(e.target.value)}
-                        onFocus={() => setEditingTarget(true)}
-                        onBlur={handleTargetBlur}
-                        onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
-                        className="h-10 w-36 rounded-xl border border-slate-200 bg-slate-50 px-3 text-right font-black text-blue-600 outline-none"
-                      />
-                    ) : (
-                      <>
-                        ₹{tradeSummary.finalPrice}
-                      </>
-                    )}
-                  </div>
-                </div>
-
-                <div
-                  className="relative overflow-hidden p-6 rounded-3xl bg-slate-900 text-white shadow-xl"
-                  onMouseEnter={() => setHoverQty(true)}
-                  onMouseLeave={() => { if (!editingQty) setHoverQty(false); }}
-                >
-                  <div className="relative z-10">
-                    <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Buy Quantity</div>
-                    {hoverQty || editingQty ? (
-                      <input
-                        type="number"
-                        step="1"
-                        value={qtyInput as any}
-                        onChange={(e) => setQtyInput(e.target.value)}
-                        onFocus={() => setEditingQty(true)}
-                        onBlur={handleQtyBlur}
-                        onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
-                    className="text-4xl w-full max-w-[200px] font-black text-white bg-slate-800 rounded-md p-2 text-center"
-                        />
-                    ) : (
-                      <div className="text-4xl font-black">{tradeSummary.qty}</div>
-                    )}
-                  </div>
-                  <div className="absolute -right-4 -bottom-4 text-white/5">
-                    <TrendingUp className="h-32 w-32" />
-                  </div>
-                </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <SelectBox label="User" value={selectedUser} options={users} onChange={setSelectedUser} />
+                <PlatformSelect label="Platform" value={selectedPlatform} options={platforms} onChange={setSelectedPlatform} />
               </div>
-            </div>
-
-            <div className="mt-8 space-y-4 border-t border-slate-200 pt-8">
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={executeOrder}
-                disabled={loading}
-                className="group relative flex h-16 w-full items-center justify-center gap-3 rounded-2xl bg-blue-600 text-xl font-black text-white shadow-2xl shadow-blue-500/30 transition-all hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {loading ? (
-                  <Loader2 className="h-6 w-6 animate-spin" />
-                ) : (
-                  <>
-                    Execute Order
-                    <ChevronRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
-                  </>
-                )}
-              </motion.button>
-              <p className="text-center text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                Final calculation includes 15.51% brokerage
-              </p>
-            </div>
+            </section>
           </div>
         </div>
-      </motion.div>
-    );
+
+        {/* Right Side: Interactive Summary Blueprint */}
+        <div className="w-full lg:w-[380px] bg-slate-50 border-t lg:border-t-0 lg:border-l border-slate-100 p-6 md:p-10 flex flex-col justify-between">
+          <div className="space-y-6">
+            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-slate-400">
+              <Layout className="h-3 w-3" />
+              Trade Summary
+            </div>
+
+            <div className="space-y-4">
+              {/* Budget View */}
+              <div className="flex items-center justify-between p-4 rounded-2xl bg-white border border-slate-200">
+                <div className="text-sm font-bold text-slate-500">Budget</div>
+                <div className="text-lg font-black text-slate-900">₹{budget.toLocaleString()}</div>
+              </div>
+
+              {/* Editable Target Price Field */}
+              <div
+                className="flex items-center justify-between p-4 rounded-2xl bg-white border border-slate-200 focus-within:ring-2 focus-within:ring-blue-500 transition-all"
+                onMouseEnter={() => setHoverTarget(true)}
+                onMouseLeave={() => { if (!editingTarget) setHoverTarget(false); }}
+              >
+                <div className="text-sm font-bold text-slate-500">Target Price</div>
+                <div className="text-lg font-black text-blue-600">
+                  {hoverTarget || editingTarget ? (
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={targetInput}
+                      onChange={(e) => setTargetInput(e.target.value)}
+                      onFocus={() => setEditingTarget(true)}
+                      onBlur={handleTargetBlur}
+                      onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+                      className="h-10 w-36 rounded-xl border border-slate-200 bg-slate-50 px-3 text-right font-black text-blue-600 outline-none"
+                    />
+                  ) : (
+                    <>₹{finalPrice}</>
+                  )}
+                </div>
+              </div>
+
+              {/* Editable Buy Quantity Field */}
+              <div
+                className="relative overflow-hidden p-6 rounded-3xl bg-slate-900 text-white shadow-xl focus-within:ring-2 focus-within:ring-blue-400 transition-all"
+                onMouseEnter={() => setHoverQty(true)}
+                onMouseLeave={() => { if (!editingQty) setHoverQty(false); }}
+              >
+                <div className="relative z-10">
+                  <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Buy Quantity</div>
+                  {hoverQty || editingQty ? (
+                    <input
+                      type="number"
+                      step="1"
+                      value={qtyInput}
+                      onChange={(e) => setQtyInput(e.target.value)}
+                      onFocus={() => setEditingQty(true)}
+                      onBlur={handleQtyBlur}
+                      onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+                      className="text-4xl w-full max-w-[200px] font-black text-white bg-slate-800 rounded-md p-2 text-center outline-none border-none"
+                    />
+                  ) : (
+                    <div className="text-4xl font-black">{qty}</div>
+                  )}
+                </div>
+                <div className="absolute -right-4 -bottom-4 text-white/5">
+                  <TrendingUp className="h-32 w-32" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom Activation Row */}
+          <div className="mt-8 space-y-4 border-t border-slate-200 pt-8">
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={executeOrder}
+              disabled={loading}
+              className="group relative flex h-16 w-full items-center justify-center gap-3 rounded-2xl bg-blue-600 text-xl font-black text-white shadow-2xl shadow-blue-500/30 transition-all hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {loading ? (
+                <Loader2 className="h-6 w-6 animate-spin" />
+              ) : (
+                <>
+                  Execute Orde1r
+                  <ChevronRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+                </>
+              )}
+            </motion.button>
+            <p className="text-center text-[10px] font-bold uppercase tracking-wider text-slate-400">
+              Final calculation includes 15.51% brokerage
+            </p>
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
 }
