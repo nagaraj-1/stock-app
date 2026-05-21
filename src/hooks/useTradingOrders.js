@@ -119,7 +119,7 @@ export function useTradingOrders() {
 
     try {
       const response = await fetch(
-        `http://127.0.0.1:8000/symbol?stockname=${encodeURIComponent(
+        `https://stock.eatoo.in/api/symbol?stockname=${encodeURIComponent(
           stock.stock
         )}`
       );
@@ -156,14 +156,14 @@ export function useTradingOrders() {
     try {
       // NAG
       const nagRes = await fetch(
-        "http://127.0.0.1:8000/orders"
+        "https://stock.eatoo.in/api/orders"
       );
 
       const nagJson = await nagRes.json();
 
       // CUTIE
       const cutieRes = await fetch(
-        "http://127.0.0.1:8000/orders"
+        "https://stock1.eatoo.in/api/orders"
       );
 
       const cutieJson = await cutieRes.json();
@@ -214,9 +214,9 @@ export function useTradingOrders() {
     let url = "";
 
     if (user1 === "NAG") {
-      url = "http://127.0.0.1:8000";
+      url = "https://stock.eatoo.in/api";
     } else {
-      url = "http://stock1.eatoo.in";
+      url = "https://stock1.eatoo.in/api";
     }
 
     const response = await fetch(
@@ -243,9 +243,9 @@ const calcelOrders = async (user1, orderId) => {
     let url = "";
 
     if (user1 === "NAG") {
-      url = "http://127.0.0.1:8000";
+      url = "https://stock.eatoo.in/api/";
     } else {
-      url = "http://stock1.eatoo.in";
+      url = "https://stock1.eatoo.in/api/";
     }
 
     const response = await fetch(
@@ -276,9 +276,9 @@ const calcelOrders = async (user1, orderId) => {
 
       let url = ""
       if(user === "NAG") 
-        url = "http://127.0.0.1:8000"
+        url = "https://stock.eatoo.in/api"
         else 
-        url = "http://stock1.eatoo.in"
+        url = "https://stock1.eatoo.in/api"
 
       
 
@@ -329,9 +329,9 @@ console.log("SELL ORDER:", order);
 
       let url = ""
       if(order.tableUser === "NAG") 
-        url = "http://127.0.0.1:8000"
+        url = "https://stock.eatoo.in/api"
         else 
-        url = "http://stock1.eatoo.in"
+        url = "https://stock1.eatoo.in/api"
 
       
 

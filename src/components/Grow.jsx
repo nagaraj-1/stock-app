@@ -6,7 +6,7 @@ export default function App() {
 
   const bottomRef = useRef(null);
 useEffect(() => {
-  const ws = new WebSocket("ws://192.168.200.153:8000/ws");
+  const ws = new WebSocket("ws://stock.eatoo.in/api/ws");
 
   ws.onopen = () => {
     console.log("CONNECTED");
@@ -91,24 +91,7 @@ useEffect(() => {
 
       {/* TEST BUTTONS */}
       <div className="mt-6 flex flex-wrap gap-4">
-        <button
-          onClick={async () => {
-            await fetch("http://127.0.0.1:8000/test");
-          }}
-          className="rounded-2xl bg-blue-600 px-6 py-3 font-semibold text-white transition hover:bg-blue-700"
-        >
-          Test Logs
-        </button>
-
-        <button
-          onClick={async () => {
-            await fetch("http://127.0.0.1:8000/orders");
-          }}
-          className="rounded-2xl bg-purple-600 px-6 py-3 font-semibold text-white transition hover:bg-purple-700"
-        >
-          Get Orders
-        </button>
-
+       
         <button
           onClick={() => {
             setLogs([]);

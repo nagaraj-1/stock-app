@@ -8,7 +8,7 @@ export default function LiveStockPanel({ onSelectStock }) {
   // API CALL
   const fetchStocks = async () => {
     try {
-      const response = await fetch("http://127.0.0.1:8000/stocks");
+      const response = await fetch("https://stock.eatoo.in/api/stocks");
 
       const result = await response.json();
 
