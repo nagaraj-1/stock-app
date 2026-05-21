@@ -13,11 +13,11 @@ export function useTradingOrders() {
     useState(false);
 
   // SETTINGS
-  const [sInvestment, setSInvestment] =
+  const [cInvestment, setCInvestment] =
     useState(
       localStorage.getItem(
-        STORAGE_KEYS.sInvestment
-      ) || DEFAULT_INVESTMENTS.sInvestment
+        STORAGE_KEYS.cInvestment
+      ) || DEFAULT_INVESTMENTS.cInvestment
     );
 
   const [nInvestment, setNInvestment] =
@@ -76,8 +76,8 @@ export function useTradingOrders() {
   // AUTO TARGET QTY
   const calculatedTargetQty = useMemo(() => {
     const investment =
-      user === "S"
-        ? Number(sInvestment)
+      user === "CUTIE"
+        ? Number(cInvestment)
         : Number(nInvestment);
 
     const qty = Math.floor(
@@ -88,7 +88,7 @@ export function useTradingOrders() {
   }, [
     user,
     targetPrice,
-    sInvestment,
+    cInvestment,
     nInvestment,
   ]);
 
@@ -101,8 +101,8 @@ export function useTradingOrders() {
   // SAVE SETTINGS
   const saveSettings = () => {
     localStorage.setItem(
-      STORAGE_KEYS.sInvestment,
-      sInvestment
+      STORAGE_KEYS.cInvestment,
+      cInvestment
     );
 
     localStorage.setItem(
@@ -368,7 +368,7 @@ console.log("SELL ORDER:", order);
       targetPercent,
       targetPrice,
       targetQty,
-      sInvestment,
+      cInvestment,
       nInvestment,
       manualTargetPrice,
       manualTargetQty,
@@ -380,7 +380,7 @@ console.log("SELL ORDER:", order);
       setTopPercent,
       setUser,
       setTargetPercent,
-      setSInvestment,
+      setCInvestment,
       setNInvestment,
       setShowSettings,
       saveSettings,

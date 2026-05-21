@@ -4,8 +4,7 @@ export default function TradingHeader({ onOpenSettings, onExecuteOrder }) {
   return (
     <header className="flex shrink-0 items-center justify-between gap-4 border-b border-slate-200 bg-white px-5 py-4">
       <div>
-        <h1 className="text-2xl font-black text-slate-950">Stock Trading</h1>
-        <p className="text-sm font-medium text-slate-500">Smart Order Entry</p>
+        <h1 className="text-2xl font-black text-slate-950">Home</h1>
       </div>
 
       <div className="flex items-center gap-2">

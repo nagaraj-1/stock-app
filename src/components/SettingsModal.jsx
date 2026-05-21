@@ -14,16 +14,16 @@ export default function SettingsModal({ fields, actions }) {
         </div>
 
         <div className="grid gap-4 px-5 py-5">
-          <FormField label="S Investment">
+          <FormField label="CUTIE Investment">
             <input
               type="number"
-              value={fields.sInvestment}
-              onChange={(event) => actions.setSInvestment(event.target.value)}
+              value={fields.cInvestment}
+              onChange={(event) => actions.setCInvestment(event.target.value)}
               className={inputClass}
             />
           </FormField>
 
-          <FormField label="N Investment">
+          <FormField label="NAG Investment">
             <input
               type="number"
               value={fields.nInvestment}

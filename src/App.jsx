@@ -16,7 +16,6 @@ export default function App() {
         onOpenSettings={() => actions.setShowSettings(true)}
         onExecuteOrder={actions.executeOrder}
       />
-aa{orders.length}
       {isLoadingStock && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm">
           <div className="flex flex-col items-center gap-3 rounded-2xl bg-white px-6 py-5 shadow-xl">
@@ -41,21 +40,17 @@ aa{orders.length}
         </section>
 
         {/* Top-Right: Live Stock Panel */}
-        <section className="flex flex-col rounded-2xl border border-slate-200 bg-white shadow-[0_8px_30px_rgb(0,0,0,0.02)]">
+        <section className="flex flex-col">
           <LiveStockPanel onSelectStock={actions.selectStock} />
         </section>
 
         {/* Bottom-Left: Orders List (OrdersTable) */}
-        <section className="flex flex-col rounded-2xl border border-slate-200 bg-white shadow-[0_8px_30px_rgb(0,0,0,0.02)]">
-          <OrdersTable orders={orders} onCancelOrder={actions.calcelOrders} onTrackOrder={actions.aiModeOrderTrack} />
+        <section className="flex flex-col">
         </section>
 
-        {/* Bottom-Right: Live Feed Coming Soon */}
-        <section className="group flex flex-col items-center justify-center rounded-2xl border border-slate-200 bg-white shadow-[0_8px_30px_rgb(0,0,0,0.02)] p-6 text-center transition-colors hover:bg-slate-50/50">
-         
-          <Grow />
-        </section>
+       
       </div>
+          <OrdersTable orders={orders} onCancelOrder={actions.calcelOrders} onSellOrder={actions.sellOrder} onTrackOrder={actions.aiModeOrderTrack} />
 
       {showSettings && (
         <SettingsModal fields={fields} actions={actions} />

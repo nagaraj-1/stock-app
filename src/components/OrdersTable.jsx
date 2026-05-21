@@ -1,187 +1,162 @@
 import { useState } from "react";
+import { Circle, User, Hash, Clock, ArrowUpRight, ArrowDownRight, TrendingDown, Brain, Trash2 } from "lucide-react";
 
 const STATUS_STYLES = {
   COMPLETE: { 
-    dot: "bg-emerald-500", 
-    text: "text-emerald-700 bg-emerald-500/10", 
-    border: "border-emerald-500/20",
+    text: "text-emerald-600 bg-emerald-50 border-emerald-100", 
+    dot: "bg-emerald-500",
     accent: "bg-emerald-500"
   },
   PENDING: { 
-    dot: "bg-amber-500", 
-    text: "text-amber-700 bg-amber-500/10", 
-    border: "border-amber-500/20",
+    text: "text-amber-600 bg-amber-50 border-amber-100", 
+    dot: "bg-amber-500",
     accent: "bg-amber-500"
   },
   CANCELLED: { 
-    dot: "bg-slate-400", 
-    text: "text-slate-600 bg-slate-400/10", 
-    border: "border-slate-400/20",
+    text: "text-slate-500 bg-slate-50 border-slate-100", 
+    dot: "bg-slate-400",
     accent: "bg-slate-400"
   },
 };
 
 const USER_STYLES = {
-  NAG: "bg-indigo-500/10 text-indigo-600 font-semibold",
-  CUTIE: "bg-fuchsia-500/10 text-fuchsia-600 font-semibold",
+  NAG: "bg-indigo-50 text-indigo-600 border-indigo-100",
+  CUTIE: "bg-fuchsia-50 text-fuchsia-600 border-fuchsia-100",
 };
 
-export default function OrdersView({ orders = [],onCancelOrder, onTrackOrder, onSellOrder }) {
+export default function OrdersView({ orders = [], onCancelOrder, onTrackOrder, onSellOrder }) {
   return (
-    <section className="relative w-full rounded-[2.5rem] bg-slate-900/5 backdrop-blur-3xl p-6 md:p-8 text-slate-800 border border-slate-200/60 shadow-[0_32px_100px_-20px_rgba(15,23,42,0.08)] overflow-hidden font-sans select-none">
+    <section className="relative w-full rounded-2xl bg-slate-50/40 p-5 text-slate-800 border border-slate-200/60 shadow-xl backdrop-blur-md overflow-hidden select-none">
       
-      {/* Premium Fluid Ambient Backgrounds */}
-      <div className="absolute -top-24 -left-20 w-96 h-96 bg-gradient-to-br from-indigo-300/20 to-purple-400/0 rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute -bottom-24 -right-20 w-96 h-96 bg-gradient-to-tr from-emerald-300/20 to-teal-400/0 rounded-full blur-[120px] pointer-events-none" />
+      {/* Subtle Soft Ambient Glows */}
+      <div className="absolute -top-12 -left-12 w-64 h-64 bg-indigo-500/5 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute -bottom-12 -right-12 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none" />
 
       {/* HEADER */}
-      <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-6 pb-6 border-b border-slate-200/60">
-        <div className="space-y-1.5">
-          <div className="flex items-center gap-2.5">
-            <span className="relative flex h-2.5 w-2.5">
+      <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200/60">
+        <div className="space-y-0.5">
+          <div className="flex items-center gap-1.5">
+            <span className="relative flex h-1.5 w-1.5">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
             </span>
-            <p className="text-[11px] font-extrabold uppercase tracking-[0.25em] text-slate-400">Trading Operations</p>
+            <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400">Trading Operations</p>
           </div>
-          <h2 className="text-2xl md:text-3xl font-black tracking-tight bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">Live Order Stream</h2>
+          <h2 className="text-lg font-extrabold tracking-tight text-slate-900">Live Order Stream</h2>
         </div>
 
-        {/* Dynamic Global Counters */}
-        <div className="flex items-center gap-5 bg-white/80 backdrop-blur-md px-5 py-3 rounded-2xl border border-slate-200/50 shadow-sm">
-          <div className="text-xs text-slate-500 font-medium">
-            Active Pool <span className="font-mono font-extrabold text-slate-900 bg-slate-100 px-2 py-1 rounded-md ml-1.5">{orders.length}</span>
+        {/* Compact Counters */}
+        <div className="flex items-center gap-3 bg-white/80 border border-slate-100 px-3 py-1.5 rounded-xl shadow-sm">
+          <div className="text-[10px] text-slate-500 font-medium">
+            Active Pool <span className="font-mono font-bold text-slate-900 bg-slate-100 px-1.5 py-0.5 rounded-md ml-1">{orders.length}</span>
           </div>
-          <div className="w-px h-5 bg-slate-200" />
-          <div className="text-xs text-slate-500 font-medium">
-            Volume <span className="font-mono font-extrabold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-md ml-1.5">
+          <div className="w-px h-3 bg-slate-200" />
+          <div className="text-[10px] text-slate-500 font-medium">
+            Volume <span className="font-mono font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded-md ml-1">
               {orders.reduce((acc, curr) => acc + (curr.quantity || 0), 0).toLocaleString()}
             </span>
           </div>
         </div>
       </div>
 
-      {/* 2-COLUMN GRID SYSTEM */}
+      {/* ORDERS SYSTEM */}
       {orders.length === 0 ? (
-        <div className="flex flex-col items-center justify-center h-80 border-2 border-dashed border-slate-200 bg-white/40 rounded-3xl mt-6 transition-all">
-          <div className="p-4 bg-slate-100 rounded-2xl mb-3 shadow-inner">
-            <svg className="w-6 h-6 text-slate-400 animate-pulse" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 12c0-1.232-.046-2.453-.138-3.662a4.006 4.006 0 00-3.7-3.7 48.656 48.656 0 00-7.324 0 4.006 4.006 0 00-3.7 3.7c-.017.22-.032.441-.046.662M19.5 12l3-3m-3 3l-3-3M3 12a48.654 48.654 0 011.066-5.32M3 12l-3-3m3 3l3-3m16.5 5.25v3.375c0 1.036-.84 1.875-1.875 1.875H18.75m-3 0H8.25m-3 0a1.875 1.875 0 01-1.875-1.875V14.25m16.5 0v3.375A3.375 3.375 0 0116.5 21h-9A3.375 3.375 0 014.125 17.625V14.25" />
-            </svg>
+        <div className="flex flex-col items-center justify-center h-60 border border-dashed border-slate-200 bg-white/50 rounded-xl mt-4">
+          <div className="p-2.5 bg-slate-100 text-slate-400 rounded-xl mb-2 animate-pulse">
+            <Clock size={16} />
           </div>
-          <p className="text-sm text-slate-400 font-semibold tracking-wide">Awaiting incoming API socket payloads...</p>
+          <p className="text-[11px] text-slate-400 font-medium tracking-wide">Awaiting socket stream data...</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 max-h-[720px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4 max-h-[580px] overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
           {orders.map((order, index) => {
             const price = order.average_price || order.trigger_price || 0;
             const isBuy = order.transaction_type === "BUY";
             const statusStyle = STATUS_STYLES[order.status] || STATUS_STYLES.PENDING;
-            const userStyle = USER_STYLES[order.tableUser] || "bg-slate-100 text-slate-600 font-medium";
+            const userStyle = USER_STYLES[order.tableUser] || "bg-slate-50 text-slate-600 border-slate-100";
 
             return (
               <div
                 key={order.order_id || index}
-                className="group relative flex flex-col justify-between bg-white border border-slate-200/60 rounded-3xl pt-6 px-6 pb-4 transition-all duration-300 hover:border-slate-300 hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)] hover:-translate-y-0.5 overflow-hidden"
+                className="group relative flex flex-col justify-between bg-white border border-slate-100 rounded-xl p-3.5 transition-all duration-200 hover:border-slate-200/80 hover:shadow-md overflow-hidden"
               >
-                {/* Dynamic Left Status Accent Accent Strip */}
-                <div className={`absolute left-0 top-0 bottom-0 w-[4px] ${statusStyle.accent} opacity-80 transition-all group-hover:w-[6px]`} />
+                {/* Left Micro Border Accent */}
+                <div className={`absolute left-0 top-0 bottom-0 w-[3px] ${statusStyle.accent} opacity-80`} />
 
-                {/* Card Top: Metadata Meta */}
-                <div className="flex items-center justify-between gap-2 mb-4 pl-1">
-                  <div className="flex items-center gap-2">
-                    <span className={`text-[10px] font-bold tracking-wider uppercase px-2.5 py-1 rounded-lg ${userStyle}`}>
+                {/* Card Header Metadata */}
+                <div className="flex items-center justify-between gap-2 mb-3">
+                  <div className="flex items-center gap-1.5">
+                    <span className={`text-[9px] font-bold tracking-wide uppercase px-1.5 py-0.5 rounded border ${userStyle}`}>
                       {order.tableUser || "SYSTEM"}
                     </span>
-                    <span className="text-xs font-mono font-bold text-slate-400">#{order.order_id || "N/A"}</span>
+                    <span className="text-[10px] font-mono text-slate-400 flex items-center gap-0.5">
+                      <Hash size={10} className="opacity-70" />
+                      {order.order_id || "N/A"}
+                    </span>
                   </div>
                   
-                  <span className={`inline-flex items-center gap-1.5 text-[11px] font-bold px-3 py-1 rounded-full border ${statusStyle.text} ${statusStyle.border}`}>
-                    <span className={`w-1.5 h-1.5 rounded-full ${statusStyle.dot}`} />
+                  <span className={`inline-flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 rounded-full border ${statusStyle.text}`}>
+                    <Circle size={5} className={`fill-current ${statusStyle.dot}`} />
                     {order.status}
                   </span>
                 </div>
 
-                {/* Card Mid: Asset Details */}
-                <div className="flex items-center justify-between gap-4 mb-4 pl-1">
+                {/* Card Main Asset Info */}
+                <div className="flex items-baseline justify-between gap-2 mb-2.5">
                   <div>
-                    <h3 className="text-2xl font-black text-slate-900 tracking-tight transition-colors group-hover:text-indigo-900">
+                    <h3 className="text-sm font-bold tracking-tight text-slate-800 transition-colors group-hover:text-indigo-600">
                       {order.tradingsymbol}
                     </h3>
-                    <div className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-400 mt-1">
-                      <svg className="w-3.5 h-3.5 opacity-60" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6l4 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
+                    <div className="flex items-center gap-1 text-[10px] font-medium text-slate-400 mt-0.5">
+                      <Clock size={10} className="opacity-70" />
                       {order.order_timestamp ? new Date(order.order_timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }) : "--:--:--"}
                     </div>
                   </div>
 
-                  <span className={`inline-flex items-center gap-1 text-xs font-black font-mono tracking-wide px-3 py-1.5 rounded-xl border-2 ${
+                  <span className={`inline-flex items-center gap-0.5 text-[10px] font-extrabold font-mono px-1.5 py-0.5 rounded border ${
                     isBuy ? "text-emerald-700 bg-emerald-50 border-emerald-100" : "text-rose-700 bg-rose-50 border-rose-100"
                   }`}>
-                    {isBuy ? "↗" : "↘"} {order.transaction_type}
+                    {isBuy ? <ArrowUpRight size={11} /> : <ArrowDownRight size={11} />}
+                    {order.transaction_type}
                   </span>
                 </div>
 
-                {/* Card Mid-Low: Segmented Numerical Metrics */}
-                <div className="grid grid-cols-2 gap-2 bg-slate-50 p-3 rounded-2xl border border-slate-100 mb-4 ml-1">
-                  <div className="pl-2">
-                    <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block mb-0.5">Quantity</span>
-                    <span className="text-base font-black text-slate-800 font-mono">{order.quantity}</span>
+                {/* Core Segmented Numbers */}
+                <div className="grid grid-cols-2 gap-1 bg-slate-50/80 p-2 rounded-lg border border-slate-100/60 mb-3">
+                  <div className="pl-1">
+                    <span className="text-[9px] uppercase font-bold text-slate-400 tracking-wider block">Qty</span>
+                    <span className="text-xs font-bold text-slate-700 font-mono">{order.quantity}</span>
                   </div>
-                  <div className="border-l border-slate-200/60 pl-4">
-                    <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block mb-0.5">Rate</span>
-                    <span className="text-base font-mono font-black text-slate-900">₹{Number(price).toFixed(2)}</span>
+                  <div className="border-l border-slate-200/60 pl-2">
+                    <span className="text-[9px] uppercase font-bold text-slate-400 tracking-wider block">Rate</span>
+                    <span className="text-xs font-bold text-slate-800 font-mono">₹{Number(price).toFixed(2)}</span>
                   </div>
                 </div>
 
-                {/* BRAND NEW ACTION ROW BUTTONS - FULL WIDTH */}
-                <div className="flex items-center gap-2 pt-2 border-t border-slate-100 ml-1">
+                {/* Micro Action Layout */}
+                <div className="flex items-center gap-1.5 pt-2 border-t border-slate-50">
                   <button 
-                    title="Liquidate Position" 
-                     onClick={() =>
-    onSellOrder(
-      order
-    )
-  }
-                    className="flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-bold text-slate-600 bg-slate-100/70 hover:bg-rose-50 hover:text-rose-600 border border-transparent hover:border-rose-200 transition-all duration-200 active:scale-[0.98]"
+                    onClick={() => onSellOrder(order)}
+                    className="flex-1 flex items-center justify-center gap-1 py-1.5 px-2 rounded-lg text-[10px] font-bold text-slate-600 bg-slate-50 hover:bg-rose-50 hover:text-rose-600 border border-slate-100 hover:border-rose-200 transition-all active:scale-[0.97]"
                   >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-                    </svg>
+                    <TrendingDown size={11} />
                     <span>SELL</span>
                   </button>
 
                   <button 
-                            
-                  onClick={() =>
-    onTrackOrder(
-      order.tableUser,
-      order.order_id
-    )
-  }
-                    title="AI Strategy Insight" 
-                    className="flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-bold text-slate-600 bg-slate-100/70 hover:bg-indigo-50 hover:text-indigo-600 border border-transparent hover:border-indigo-200 transition-all duration-200 active:scale-[0.98]"
+                    onClick={() => onTrackOrder(order.tableUser, order.order_id)}
+                    className="flex-1 flex items-center justify-center gap-1 py-1.5 px-2 rounded-lg text-[10px] font-bold text-slate-600 bg-slate-50 hover:bg-indigo-50 hover:text-indigo-600 border border-slate-100 hover:border-indigo-200 transition-all active:scale-[0.97]"
                   >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 21l8.954-8.955M21 12h0M12 3v0M3 12h0M12 21h0M4.93 19.07l.008-.008M19.07 4.93l-.008.008M19.07 19.07l-.008-.008M4.93 4.93l.008-.008"/>
-                    </svg>
+                    <Brain size={11} />
                     <span>AI</span>
                   </button>
 
                   <button 
-                  onClick={() =>
-    onCancelOrder(
-      order.tableUser,
-      order.order_id
-    )
-  }
-                    title="Drop Record" 
-                    className="flex-initial p-2.5 rounded-xl text-slate-400 hover:text-red-600 bg-slate-100/50 hover:bg-red-50 border border-transparent hover:border-red-200 transition-all duration-200 active:scale-[0.95]"
+                    onClick={() => onCancelOrder(order.tableUser, order.order_id)}
+                    className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 bg-slate-50 hover:bg-red-50 border border-slate-100 hover:border-red-200 transition-all active:scale-[0.93]"
+                    title="Drop Record"
                   >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                    </svg>
+                    <Trash2 size={12} />
                   </button>
                 </div>
 
