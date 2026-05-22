@@ -273,7 +273,7 @@ const calcelOrders = async (user1, orderId) => {
   // EXECUTE ORDER
   const executeOrder = async () => {
     try {
-
+console.log(user)
       let url = ""
       if(user === "NAG") 
         url = "https://stock.eatoo.in/api"
