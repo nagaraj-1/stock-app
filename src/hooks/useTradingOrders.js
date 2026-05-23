@@ -238,7 +238,7 @@ export function useTradingOrders() {
       const url = API_CONFIG[user1];
 
       const response = await fetch(
-        `${url}/live-track?order_id=${orderId}`,
+        `${url}/live-track?order_id=${orderId}&sell_price=1500`,
         {
           method: "GET",
         }
@@ -257,6 +257,26 @@ export function useTradingOrders() {
       );
     }
   };
+
+  // ==========================================
+  // STOP TRACK
+  // ==========================================
+
+  const stopTracking = async (user1, orderId) => {
+    const url = API_CONFIG[user1];
+    try {
+
+      await fetch(
+        `${url}stop-track?order_id=${orderId}`,
+        {
+          method: "POST",
+        }
+      );
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
 
   const calcelOrders = async (
     user1,
@@ -316,19 +336,8 @@ export function useTradingOrders() {
     }
   };
 
-  const sellOrder = async (order) => {
+  const sellOrder = async (order,sellPrice) => {
     try {
-      console.log("SELL ORDER:", order);
-
-      const sellPercent = 16.7;
-
-      const sellPrice = Number(
-        (
-          (order.trigger_price /
-            (1 + 15.55 / 100)) *
-          (1 + sellPercent / 100)
-        ).toFixed(2)
-      );
 
       console.log({
         symbol: order.tradingsymbol,
@@ -393,6 +402,7 @@ export function useTradingOrders() {
       fetchOrders,
       calcelOrders,
       aiModeOrderTrack,
+      stopTracking,
       sellOrder,
 
       // MANUAL EDITS

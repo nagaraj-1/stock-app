@@ -5,7 +5,7 @@ import TradingHeader from "./components/TradingHeader";
 import SettingsModal from "./components/SettingsModal";
 import { useTradingOrders } from "./hooks/useTradingOrders";
 import { LineChart, Activity } from "lucide-react";
-import Grow from "./components/Grow";
+import LiveResponse from "./components/LiveResponse";
 
 export default function App() {
   const { fields, actions, orders, showSettings, isLoadingStock } = useTradingOrders();
@@ -46,11 +46,12 @@ export default function App() {
 
         {/* Bottom-Left: Orders List (OrdersTable) */}
         <section className="flex flex-col">
+          <LiveResponse/>
         </section>
 
        
       </div>
-          <OrdersTable orders={orders} onCancelOrder={actions.calcelOrders} onSellOrder={actions.sellOrder} onTrackOrder={actions.aiModeOrderTrack} />
+          <OrdersTable orders={orders} onCancelOrder={actions.calcelOrders} onSellOrder={actions.sellOrder} onTrackOrder={actions.aiModeOrderTrack} onStopTrackOrder={actions.stopTracking} />
 
       {showSettings && (
         <SettingsModal fields={fields} actions={actions} />
