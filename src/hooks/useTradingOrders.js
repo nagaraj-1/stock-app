@@ -5,6 +5,8 @@ import {
   STORAGE_KEYS,
 } from "../constants/trading";
 
+import API_CONFIG from "../config/apiConfig";
+
 export function useTradingOrders() {
   const [showSettings, setShowSettings] =
     useState(false);
@@ -62,7 +64,7 @@ export function useTradingOrders() {
       Math.round(
         ((price / (1 + topPercent / 100)) *
           (1 + targetPercent / 100)) *
-          100
+        100
       ) / 100
     );
   }, [price, topPercent, targetPercent]);
@@ -118,17 +120,28 @@ export function useTradingOrders() {
     setIsLoadingStock(true);
 
     try {
+      const yahooUrl = `https://query1.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(
+        stock.stock
+      )}`;
+
       const response = await fetch(
-        `https://stock.eatoo.in/api/symbol?stockname=${encodeURIComponent(
-          stock.stock
+        `https://corsproxy.io/?${encodeURIComponent(
+          yahooUrl
         )}`
       );
 
       const result = await response.json();
 
-      console.log("SYMBOL API:", result);
+      console.log(
+        "YAHOO FINANCE RESPONSE:",
+        result
+      );
 
-      setSymbol(result.output || stock.stock);
+      const yahooSymbol =
+        result.quotes?.[0]?.symbol ||
+        stock.stock;
+
+      setSymbol(yahooSymbol.replace(".NS", ""));
 
       setPrice(
         Number(stock.currentPrice) || 0
@@ -156,31 +169,35 @@ export function useTradingOrders() {
     try {
       // NAG
       const nagRes = await fetch(
-        "https://stock.eatoo.in/api/orders"
+        `${API_CONFIG.NAG}/orders`
       );
 
       const nagJson = await nagRes.json();
 
       // CUTIE
       const cutieRes = await fetch(
-        "https://stock1.eatoo.in/api/orders"
+        `${API_CONFIG.CUTIE}/orders`
       );
 
       const cutieJson = await cutieRes.json();
 
-      // MAP DATA
-      const nagOrders = nagJson.orders.map(
-        (item) => ({
+      const nagOrders = Array.isArray(
+        nagJson.orders
+      )
+        ? nagJson.orders.map((item) => ({
           ...item,
           tableUser: "NAG",
-        })
-      );
+        }))
+        : [];
 
-      const cutieOrders =
-        cutieJson.orders.map((item) => ({
+      const cutieOrders = Array.isArray(
+        cutieJson.orders
+      )
+        ? cutieJson.orders.map((item) => ({
           ...item,
           tableUser: "CUTIE",
-        }));
+        }))
+        : [];
 
       // MERGE + SORT
       const merged = [
@@ -208,80 +225,73 @@ export function useTradingOrders() {
     fetchOrders();
   }, []);
 
+  const aiModeOrderTrack = async (
+    user1,
+    orderId
+  ) => {
+    try {
+      console.log("AI MODE TRACK:", {
+        user1,
+        orderId,
+      });
 
-  const aiModeOrderTrack = async (user1, orderId) => {
-  try {
-    let url = "";
+      const url = API_CONFIG[user1];
 
-    if (user1 === "NAG") {
-      url = "https://stock.eatoo.in/api";
-    } else {
-      url = "https://stock1.eatoo.in/api";
+      const response = await fetch(
+        `${url}/live-track?order_id=${orderId}`,
+        {
+          method: "GET",
+        }
+      );
+
+      const data = await response.json();
+
+      console.log("TRACK RESPONSE:", data);
+
+      // refresh orders
+      await fetchOrders();
+    } catch (error) {
+      console.log(
+        "Track order error:",
+        error
+      );
     }
+  };
 
-    const response = await fetch(
-      `${url}/live-track?order_id=${orderId}`,
-      {
-        method: "GET",
-      }
-    );
+  const calcelOrders = async (
+    user1,
+    orderId
+  ) => {
+    try {
+      const url = API_CONFIG[user1];
 
-    const data = await response.json();
+      const response = await fetch(
+        `${url}/cancel-order?order_id=${orderId}`,
+        {
+          method: "POST",
+        }
+      );
 
-    console.log("CANCEL RESPONSE:", data);
+      const data = await response.json();
 
-    // refresh orders
-    await fetchOrders();
+      console.log("CANCEL RESPONSE:", data);
 
-  } catch (error) {
-    console.log("Cancel order error:", error);
-  }
-};
-
-const calcelOrders = async (user1, orderId) => {
-  try {
-    let url = "";
-
-    if (user1 === "NAG") {
-      url = "https://stock.eatoo.in/api/";
-    } else {
-      url = "https://stock1.eatoo.in/api/";
+      // refresh orders
+      await fetchOrders();
+    } catch (error) {
+      console.log(
+        "Cancel order error:",
+        error
+      );
     }
-
-    const response = await fetch(
-      `${url}/cancel-order?order_id=${orderId}`,
-      {
-        method: "POST",
-      }
-    );
-
-    const data = await response.json();
-
-    console.log("CANCEL RESPONSE:", data);
-
-    // refresh orders
-    await fetchOrders();
-
-  } catch (error) {
-    console.log("Cancel order error:", error);
-  }
-};
-
-
-
+  };
 
   // EXECUTE ORDER
   const executeOrder = async () => {
     try {
-console.log(user)
-      let url = ""
-      if(user === "NAG") 
-        url = "https://stock.eatoo.in/api"
-        else 
-        url = "https://stock1.eatoo.in/api"
+      console.log(user);
 
-      
-
+      const url = API_CONFIG[user];
 
       const response = await fetch(
         `${url}/buy?symbol=${symbol}&qty=${targetQty}&trigger_price=${targetPrice}`,
@@ -308,33 +318,27 @@ console.log(user)
 
   const sellOrder = async (order) => {
     try {
-console.log("SELL ORDER:", order);
+      console.log("SELL ORDER:", order);
 
-    const sellPercent = 16.7;
+      const sellPercent = 16.7;
 
+      const sellPrice = Number(
+        (
+          (order.trigger_price /
+            (1 + 15.55 / 100)) *
+          (1 + sellPercent / 100)
+        ).toFixed(2)
+      );
 
-    const sellPrice = Number(
-      (
-        (order.trigger_price / (1 + (15.55 / 100))) *
-        (1 + (sellPercent / 100))
-      ).toFixed(2)
-    );
+      console.log({
+        symbol: order.tradingsymbol,
+        user: order.tableUser,
+        qty: order.quantity,
+        sellPrice,
+      });
 
-    console.log({
-      symbol: order.tradingsymbol,
-      user: order.tableUser,
-      qty: order.quantity,
-      sellPrice,
-    });
-
-      let url = ""
-      if(order.tableUser === "NAG") 
-        url = "https://stock.eatoo.in/api"
-        else 
-        url = "https://stock1.eatoo.in/api"
-
-      
-
+      const url =
+        API_CONFIG[order.tableUser];
 
       const response = await fetch(
         `${url}/sell?symbol=${order.tradingsymbol}&qty=${order.quantity}&price=${sellPrice}`,
@@ -353,7 +357,7 @@ console.log("SELL ORDER:", order);
       }
     } catch (error) {
       console.error(
-        "BUY API ERROR:",
+        "SELL API ERROR:",
         error
       );
     }
@@ -387,9 +391,10 @@ console.log("SELL ORDER:", order);
       selectStock,
       executeOrder,
       fetchOrders,
-calcelOrders,
+      calcelOrders,
       aiModeOrderTrack,
       sellOrder,
+
       // MANUAL EDITS
       setManualTargetPrice,
       setManualTargetQty,

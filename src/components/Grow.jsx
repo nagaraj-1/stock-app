@@ -1,11 +1,19 @@
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
-export default function App() {
+export default function LiveConsole() {
   const [logs, setLogs] = useState([]);
-  const [connected, setConnected] = useState(false);
-
+  const wsRef = useRef(null);
   const bottomRef = useRef(null);
 
+  useEffect(() => {
+    connectWebSocket();
+
+    return () => {
+      if (wsRef.current) {
+        wsRef.current.close();
+      }
+    };
+  }, []);
 
   // AUTO SCROLL
   useEffect(() => {
@@ -14,88 +22,66 @@ export default function App() {
     });
   }, [logs]);
 
+  const connectWebSocket = () => {
+    // CHANGE YOUR DOMAIN
+    const ws = new WebSocket("wss://stock.eatoo.in/ws");
+
+    wsRef.current = ws;
+
+    ws.onopen = () => {
+      addLog("🟢 Connected to server");
+    };
+
+    ws.onmessage = (event) => {
+      addLog(event.data);
+    };
+
+    ws.onerror = () => {
+      addLog("🔴 WebSocket Error");
+    };
+
+    ws.onclose = () => {
+      addLog("🟡 Disconnected... reconnecting");
+
+      setTimeout(() => {
+        connectWebSocket();
+      }, 3000);
+    };
+  };
+
+  const addLog = (message) => {
+    setLogs((prev) => [
+      ...prev,
+      `[${new Date().toLocaleTimeString()}] ${message}`,
+    ]);
+  };
+
   return (
-    <div className="min-h-screen bg-slate-100 p-6">
-      {/* HEADER */}
-      <div className="mb-6 flex items-center justify-between rounded-2xl bg-white p-5 shadow-sm">
-      
+    <div
+      style={{
+        background: "#000",
+        color: "#00ff00",
+        height: "100vh",
+        padding: "20px",
+        overflowY: "auto",
+        fontFamily: "monospace",
+      }}
+    >
+      <h2 style={{ color: "#fff" }}>LIVE PYTHON CONSOLE</h2>
 
+      {logs.map((log, index) => (
         <div
-          className={`rounded-full px-4 py-2 text-sm font-semibold ${
-            connected
-              ? "bg-green-100 text-green-700"
-              : "bg-red-100 text-red-700"
-          }`}
-        >
-          {connected ? "CONNECTED" : "DISCONNECTED"}
-        </div>
-      </div>
-
-      {/* LOG SCREEN */}
-      <div className="rounded-3xl border border-slate-200 bg-black p-5 shadow-xl">
-        <div className="mb-4 flex items-center gap-2">
-          <div className="h-3 w-3 rounded-full bg-red-500"></div>
-          <div className="h-3 w-3 rounded-full bg-yellow-500"></div>
-          <div className="h-3 w-3 rounded-full bg-green-500"></div>
-
-          <span className="ml-4 text-sm text-slate-400">
-            websocket://127.0.0.1:8000/ws
-          </span>
-        </div>
-
-        <div className="h-[700px] overflow-y-auto rounded-2xl bg-[#050505] p-4 font-mono text-sm text-green-400">
-          {logs.length === 0 ? (
-            <div className="animate-pulse text-slate-500">
-              Waiting for backend logs...
-            </div>
-          ) : (
-            logs.map((log, index) => (
-              <div
-                key={index}
-                className="mb-2 break-words border-b border-slate-800 pb-2"
-              >
-                <span className="mr-3 text-slate-500">
-                  [{new Date().toLocaleTimeString()}]
-                </span>
-
-                {log.message}
-              </div>
-            ))
-          )}
-
-          <div ref={bottomRef} />
-        </div>
-      </div>
-
-      {/* TEST BUTTONS */}
-      <div className="mt-6 flex flex-wrap gap-4">
-        <button
-          onClick={async () => {
-            await fetch("http://127.0.0.1:8000/test");
+          key={index}
+          style={{
+            marginBottom: "8px",
+            whiteSpace: "pre-wrap",
           }}
-          className="rounded-2xl bg-blue-600 px-6 py-3 font-semibold text-white transition hover:bg-blue-700"
         >
-          Test Logs
-        </button>
+          {log}
+        </div>
+      ))}
 
-        <button
-          onClick={async () => {
-            await fetch("http://127.0.0.1:8000/orders");
-          }}
-          className="rounded-2xl bg-purple-600 px-6 py-3 font-semibold text-white transition hover:bg-purple-700"
-        >
-          Get Orders
-        </button>
-
-        <button
-          onClick={() => {
-            setLogs([]);
-          }}
-          className="rounded-2xl bg-red-600 px-6 py-3 font-semibold text-white transition hover:bg-red-700"
-        >
-          Clear Logs
-        </button>
-      </div>
+      <div ref={bottomRef}></div>
     </div>
   );
 }

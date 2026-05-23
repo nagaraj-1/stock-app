@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { LineChart, TrendingUp, TrendingDown, Activity, ArrowRight } from "lucide-react";
+import API_CONFIG from "../config/apiConfig";
 
 export default function LiveStockPanel({ onSelectStock }) {
   const [stocks, setStocks] = useState([]);
@@ -7,7 +8,7 @@ export default function LiveStockPanel({ onSelectStock }) {
 
   const fetchStocks = async () => {
     try {
-      const response = await fetch("https://stock.eatoo.in/api/stocks");
+      const response = await fetch(`${API_CONFIG.STOCK}/stocks`);
       const result = await response.json();
       const latestData = result?.data?.[result.data.length - 1];
       setStocks(latestData?.data || []);
@@ -33,7 +34,7 @@ export default function LiveStockPanel({ onSelectStock }) {
             <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-indigo-600">
               Live Market
             </span>
-           
+
           </div>
 
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900 shadow-sm">
@@ -92,9 +93,9 @@ export default function LiveStockPanel({ onSelectStock }) {
                       <span className="text-xs font-bold tracking-tight text-slate-800 transition-colors group-hover:text-indigo-600">
                         {stock.stock}
                       </span>
-                      <ArrowRight 
-                        size={10} 
-                        className="opacity-0 -translate-x-1 transition-all duration-200 group-hover:opacity-100 group-hover:translate-x-0 text-indigo-500" 
+                      <ArrowRight
+                        size={10}
+                        className="opacity-0 -translate-x-1 transition-all duration-200 group-hover:opacity-100 group-hover:translate-x-0 text-indigo-500"
                       />
                     </div>
                     <div className="flex items-center gap-1">
@@ -107,11 +108,10 @@ export default function LiveStockPanel({ onSelectStock }) {
 
                   {/* RIGHT: PERFORMANCE BADGE */}
                   <div
-                    className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold tracking-tight ${
-                      isPositive
+                    className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold tracking-tight ${isPositive
                         ? "bg-emerald-50 text-emerald-700 border border-emerald-100"
                         : "bg-rose-50 text-rose-700 border border-rose-100"
-                    }`}
+                      }`}
                   >
                     {isPositive ? (
                       <TrendingUp size={12} className="text-emerald-600" />
