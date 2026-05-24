@@ -19,6 +19,7 @@ export default function LiveResponse({ user = "ALL" }) {
     const ws = new WebSocket(WS_URL);
     wsRef.current = ws;
 
+
     ws.onopen = () => {
       setStatus("connected");
       addSystemMessage("SYSTEM: SOCKET STREAM ESTABLISHED");
@@ -59,6 +60,11 @@ export default function LiveResponse({ user = "ALL" }) {
     const timestamp = new Date().toLocaleTimeString([], { hour12: false });
     setMessages((prev) => [...prev, { id: Date.now() + Math.random(), time: timestamp, type: "system", text }]);
   };
+
+
+    const clearLogs = () => {
+  setMessages([]);
+};
 
   useEffect(() => {
     connectWebSocket();
@@ -129,6 +135,24 @@ export default function LiveResponse({ user = "ALL" }) {
         {/* Auto Scroll Anchor */}
         <div ref={terminalEndRef} />
       </div>
+      <div className="flex items-center gap-2">
+  <button
+    onClick={clearLogs}
+    className="px-2 py-1 text-[10px] rounded bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500/20 transition"
+  >
+    CLEAR
+  </button>
+
+  <div
+    className={`flex items-center gap-1.5 px-2 py-0.5 rounded-md border text-[10px] font-bold ${statusConfig[status].bg} ${statusConfig[status].text} ${statusConfig[status].border}`}
+  >
+    <Radio
+      size={10}
+      className={status === "connected" ? "animate-pulse" : ""}
+    />
+    {statusConfig[status].label}
+  </div>
+</div>
     </div>
   );
 }

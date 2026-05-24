@@ -56,22 +56,8 @@ export default function OrdersView({
   const [sellPercentages, setSellPercentages] = useState({});
 
   return (
-    <section className="w-full flex flex-col rounded-3xl border border-slate-200 bg-white shadow-[0_20px_55px_-32px_rgba(15,23,42,0.45)] overflow-hidden">
+    <section className="h-[400px]  flex flex-col rounded-3xl border border-slate-200 bg-white shadow-[0_20px_55px_-32px_rgba(15,23,42,0.45)] overflow-hidden"> 
       
-      {/* FIXED HEADER */}
-      <div className="sticky top-0 z-20 bg-white border-b border-slate-100 px-7 py-4 flex items-center justify-between">
-        <div>
-          <h3 className="text-sm font-bold uppercase tracking-[0.14em] text-slate-400">
-            Live Orders Overview
-          </h3>
-          {orders.length > 0 && (
-            <p className="text-xs text-slate-400 mt-0.5">
-              Showing {orders.length} active trade metrics
-            </p>
-          )}
-        </div>
-      </div>
-
       {orders.length === 0 ? (
         <div className="m-5 flex h-56 flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50/60 p-6 sm:m-7">
           <div className="mb-3 rounded-2xl bg-white p-3 text-slate-400 shadow-sm">

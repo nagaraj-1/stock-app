@@ -35,35 +35,7 @@ export default function OrderFormModern({
 
   return (
     <section className="w-full rounded-2xl border border-slate-200/60 bg-gradient-to-br from-slate-50 to-slate-100/50 p-4 sm:p-5 shadow-xl shadow-slate-200/40 backdrop-blur-xl">
-      
-      {/* Header - Compact and modern */}
-      <div className="mb-5 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-100 text-indigo-600">
-            <Zap size={16} fill="currentColor" />
-          </div>
-          <div>
-            <h2 className="text-sm font-bold text-slate-800">
-              Smart Execution
-            </h2>
-            
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1">
-          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]"></span>
-          <span className="text-[10px] font-bold tracking-wide text-emerald-700">
-            LIVE
-          </span>
-        </div>
-      </div>
-
-      {/* 
-        Responsive Layout Container: 
-        Mobile: 2 Columns 
-        Tablet: 4 Columns 
-        Desktop (xl): Single Row using Flex-1 
-      */}
+     
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 xl:flex xl:flex-row xl:items-end xl:gap-2.5">
         
         {/* Symbol */}

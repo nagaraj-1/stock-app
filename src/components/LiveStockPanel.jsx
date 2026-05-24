@@ -29,18 +29,7 @@ export default function LiveStockPanel({ onSelectStock }) {
     <div className="flex h-[400px] w-full max-w flex-col overflow-hidden rounded-2xl border border-slate-100 bg-slate-50/50 shadow-xl backdrop-blur-md">
       {/* HEADER */}
       <div className="sticky top-0 z-10 border-b border-slate-100 bg-white/80 px-5 py-4 backdrop-blur-md">
-        <div className="flex items-center justify-between">
-          <div>
-            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-indigo-600">
-              Live Market
-            </span>
-
-          </div>
-
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900 shadow-sm">
-            <LineChart className="text-white" size={15} />
-          </div>
-        </div>
+        
 
         {/* REFRESH STATUS */}
         <div className="mt-3 flex items-center justify-between rounded-lg bg-slate-100/70 px-3 py-1.5">
@@ -50,7 +39,7 @@ export default function LiveStockPanel({ onSelectStock }) {
               <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
             </span>
             <span className="text-[10px] font-semibold tracking-wide text-slate-600">
-              Auto-refreshing
+              Live
             </span>
           </div>
           <span className="text-[9px] font-medium text-slate-400 uppercase tracking-wider">
