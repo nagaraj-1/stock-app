@@ -1,8 +1,7 @@
 export const API_CONFIG = {
-    NAG: "http://localhost:8000",
-    CUTIE: "http://localhost:8000",
-    STOCK: "http://localhost:8000",
-    LIVE_CONSOLE_N: "localhost:8000",
+    NAG: "https://stock.eatoo.in/api",
+    CUTIE: "https://stock1.eatoo.in/api",
+    STOCK: "https://stock.eatoo.in/api",
 };
 
 export default API_CONFIG;

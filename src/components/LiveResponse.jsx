@@ -14,11 +14,8 @@ export default function LiveResponse({ user = "ALL" }) {
   }, [messages]);
 
   const connectWebSocket = () => {
-    const WS_URL =
-      window.location.hostname === "localhost"
-        ? "ws://localhost:8000/ws"
-        : "wss://stock.eatoo.in/ws";
-
+    const WS_URL = user === "NAG" ? "wss://stock.eatoo.in/api/" : "wss://stock1.eatoo.in/api/";
+      
     const ws = new WebSocket(WS_URL);
     wsRef.current = ws;
 
