@@ -4,58 +4,72 @@ import OrdersTable from "./components/OrdersTable";
 import TradingHeader from "./components/TradingHeader";
 import SettingsModal from "./components/SettingsModal";
 import { useTradingOrders } from "./hooks/useTradingOrders";
-import { LineChart, Activity } from "lucide-react";
 import LiveResponse from "./components/LiveResponse";
 
 export default function App() {
   const { fields, actions, orders, showSettings, isLoadingStock } = useTradingOrders();
 
   return (
-    <main className=" bg-[#f8fafc] text-slate-900 antialiased flex flex-col">
-      <TradingHeader
-        onOpenSettings={() => actions.setShowSettings(true)}
-        onExecuteOrder={actions.executeOrder}
-      />
-      {isLoadingStock && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm">
-          <div className="flex flex-col items-center gap-3 rounded-2xl bg-white px-6 py-5 shadow-xl">
-            <div className="h-10 w-10 animate-spin rounded-full border-4 border-indigo-200 border-t-indigo-600"></div>
+    <div className="min-h-screen flex flex-col bg-[#f8fafc] text-slate-900 antialiased">
+      {/* TradingHeader Full Width */}
+      <header className="w-full">
+        <TradingHeader
+          onOpenSettings={() => actions.setShowSettings(true)}
+          onExecuteOrder={actions.executeOrder}
+        />
+      </header>
 
-            <p className="text-sm font-semibold text-slate-700">
-              Loading stock...
-            </p>
+      <main className="flex-1 p-4 md:p-6 space-y-6">
+        {/* Loading Overlay */}
+        {isLoadingStock && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm">
+            <div className="flex flex-col items-center gap-3 rounded-2xl bg-white px-6 py-5 shadow-xl">
+              <div className="h-10 w-10 animate-spin rounded-full border-4 border-indigo-200 border-t-indigo-600"></div>
+              <p className="text-sm font-semibold text-slate-700">Loading stock...</p>
+            </div>
           </div>
+        )}
+
+        {/* Dashboard Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Top Row: Form and Stock Panel */}
+          <div className="lg:col-span-2">
+            <OrderForm
+              fields={fields}
+              actions={actions}
+              onExecuteOrder={actions.executeOrder}
+            />
+          </div>
+          
+          <section>
+            <LiveStockPanel onSelectStock={actions.selectStock} />
+          </section>
+
+          <section>
+           <OrdersTable 
+            orders={orders} 
+            onCancelOrder={actions.calcelOrders} 
+            onSellOrder={actions.sellOrder} 
+            onTrackOrder={actions.aiModeOrderTrack} 
+            onStopTrackOrder={actions.stopTracking} 
+          /> 
+          </section>
+        
+
+        {/* Bottom Section: Orders Table */}
+        <section>
+          <LiveResponse user="NAG"/>
+        </section>
+         <section>
+          <LiveResponse user="CUTIE"/>
+        </section>
+
         </div>
-      )}
-
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-4 p-4 overflow-y-auto lg:overflow-hidden">
-        {/* Top-Left: Order Execution (OrderForm) */}
-        <section className="flex flex-col rounded-2xl border border-slate-200 bg-white shadow-[0_8px_30px_rgb(0,0,0,0.02)]">
-          <OrderForm
-            fields={fields}
-            actions={actions}
-            
-            onExecuteOrder={actions.executeOrder}
-          />
-        </section>
-
-        {/* Top-Right: Live Stock Panel */}
-        <section className="flex flex-col">
-          <LiveStockPanel onSelectStock={actions.selectStock} />
-        </section>
-
-        {/* Bottom-Left: Orders List (OrdersTable) */}
-        <section className="flex flex-col">
-          <LiveResponse/>
-        </section>
-
-       
-      </div>
-          <OrdersTable orders={orders} onCancelOrder={actions.calcelOrders} onSellOrder={actions.sellOrder} onTrackOrder={actions.aiModeOrderTrack} onStopTrackOrder={actions.stopTracking} />
+      </main>
 
       {showSettings && (
         <SettingsModal fields={fields} actions={actions} />
       )}
-    </main>
+    </div>
   );
 }

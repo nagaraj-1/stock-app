@@ -1,154 +1,137 @@
 import React, { useEffect, useRef, useState } from "react";
+import { Terminal, ShieldAlert, Radio } from "lucide-react";
 
-export default function LiveResponse() {
-
+export default function LiveResponse({ user = "ALL" }) {
   const [messages, setMessages] = useState([]);
-
+  const [status, setStatus] = useState("disconnected"); // connected, disconnected, error
   const wsRef = useRef(null);
-
   const reconnectTimeout = useRef(null);
+  const terminalEndRef = useRef(null);
 
-  // ==========================================
-  // WEBSOCKET CONNECT
-  // ==========================================
+  // Auto-scroll to bottom on new messages
+  useEffect(() => {
+    terminalEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   const connectWebSocket = () => {
-
     const WS_URL =
       window.location.hostname === "localhost"
         ? "ws://localhost:8000/ws"
         : "wss://stock.eatoo.in/ws";
 
     const ws = new WebSocket(WS_URL);
-
     wsRef.current = ws;
 
-    // ==========================================
-    // CONNECTED
-    // ==========================================
-
     ws.onopen = () => {
-
-      console.log("WEBSOCKET CONNECTED");
-
-      addMessage("🟢 LIVE SERVER CONNECTED");
+      setStatus("connected");
+      addSystemMessage("SYSTEM: SOCKET STREAM ESTABLISHED");
     };
-
-    // ==========================================
-    // RECEIVE MESSAGE
-    // ==========================================
 
     ws.onmessage = (event) => {
-
-      addMessage(event.data);
+      const data = event.data;
+      
+      // Smart Filter: Only keep logs matching this user context 
+      // (Or keep all if no explicit user logs logic is configured upstream)
+      if (data.includes(user) || user === "ALL" || !data.includes("user=")) {
+        addMessage(data);
+      }
     };
-
-    // ==========================================
-    // ERROR
-    // ==========================================
 
     ws.onerror = (error) => {
-
-      console.log("WEBSOCKET ERROR", error);
-
-      addMessage("🔴 WEBSOCKET ERROR");
+      setStatus("error");
+      addSystemMessage("ERROR: CONNECTION FAULT DETECTED");
     };
-
-    // ==========================================
-    // DISCONNECTED
-    // ==========================================
 
     ws.onclose = () => {
-
-      console.log("WEBSOCKET DISCONNECTED");
-
-      addMessage("🟡 SERVER DISCONNECTED");
-
+      setStatus("disconnected");
+      addSystemMessage("SYSTEM: STREAM DISCONNECTED");
+      
       reconnectTimeout.current = setTimeout(() => {
-
+        addSystemMessage("SYSTEM: ATTEMPTING RECONNECT...");
         connectWebSocket();
-
-      }, 3000);
+      }, 4000);
     };
   };
 
-  // ==========================================
-  // ADD MESSAGE
-  // ==========================================
-
-  const addMessage = (message) => {
-
-    setMessages((prev) => [
-
-      ...prev,
-
-      `[${new Date().toLocaleTimeString()}] ${message}`
-
-    ]);
+  const addMessage = (text) => {
+    const timestamp = new Date().toLocaleTimeString([], { hour12: false });
+    setMessages((prev) => [...prev, { id: Date.now() + Math.random(), time: timestamp, type: "log", text }]);
   };
 
-  // ==========================================
-  // START
-  // ==========================================
+  const addSystemMessage = (text) => {
+    const timestamp = new Date().toLocaleTimeString([], { hour12: false });
+    setMessages((prev) => [...prev, { id: Date.now() + Math.random(), time: timestamp, type: "system", text }]);
+  };
 
   useEffect(() => {
-
     connectWebSocket();
-
     return () => {
-
-      if (wsRef.current) {
-        wsRef.current.close();
-      }
-
-      if (reconnectTimeout.current) {
-        clearTimeout(reconnectTimeout.current);
-      }
+      if (wsRef.current) wsRef.current.close();
+      if (reconnectTimeout.current) clearTimeout(reconnectTimeout.current);
     };
+  }, [user]);
 
-  }, []);
-
-  // ==========================================
-  // UI
-  // ==========================================
+  // Status pills configuration
+  const statusConfig = {
+    connected: { bg: "bg-emerald-500/10", text: "text-emerald-400", border: "border-emerald-500/20", label: "LIVE" },
+    disconnected: { bg: "bg-amber-500/10", text: "text-amber-400", border: "border-amber-500/20", label: "RECONNECTING" },
+    error: { bg: "bg-rose-500/10", text: "text-rose-400", border: "border-rose-500/20", label: "ERROR" },
+  };
 
   return (
-    <div
-      style={{
-        background: "#000",
-        color: "#00ff00",
-        height: "100vh",
-        overflowY: "auto",
-        padding: "20px",
-        fontFamily: "monospace",
-        fontSize: "14px",
-      }}
-    >
-
-      <h2
-        style={{
-          color: "#ffffff",
-          marginBottom: "20px",
-        }}
-      >
-        LIVE PYTHON LOGS
-      </h2>
-
-      {messages.map((msg, index) => (
-
-        <div
-          key={index}
-          style={{
-            marginBottom: "8px",
-            whiteSpace: "pre-wrap",
-            wordBreak: "break-word",
-          }}
-        >
-          {msg}
+    <div className="flex flex-col h-[320px] w-full rounded-2xl border border-slate-800 bg-slate-950 shadow-2xl overflow-hidden font-mono text-xs selection:bg-indigo-500/30">
+      
+      {/* Terminal Header */}
+      <div className="flex items-center justify-between bg-slate-900 px-4 py-2.5 border-b border-slate-800">
+        <div className="flex items-center gap-2">
+          <Terminal size={14} className="text-indigo-400" />
+          <h3 className="font-bold tracking-wide text-slate-200 uppercase">
+            {user} Console Logs
+          </h3>
         </div>
 
-      ))}
+        {/* Dynamic Connection Status Tag */}
+        <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-md border text-[10px] font-bold ${statusConfig[status].bg} ${statusConfig[status].text} ${statusConfig[status].border}`}>
+          <Radio size={10} className={status === "connected" ? "animate-pulse" : ""} />
+          {statusConfig[status].label}
+        </div>
+      </div>
 
+      {/* Terminal Feed Body */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-1.5 scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent">
+      
+        {messages.map((msg) => (
+          <div key={msg.id} className="leading-relaxed flex items-start gap-2 group">
+            {/* Timestamp */}
+            <span className="text-slate-600 select-none shrink-0 font-medium">
+              [{msg.time}]
+            </span>
+
+            {/* Custom Log Coloring Based on Event Type */}
+            {msg.type === "system" ? (
+              <span className="text-indigo-400 font-semibold tracking-wide">
+                {msg.text}
+              </span>
+            ) : msg.text.toLowerCase().includes("error") || msg.text.toLowerCase().includes("fail") ? (
+              <span className="text-rose-400 flex items-center gap-1 bg-rose-500/5 px-1 rounded">
+                <ShieldAlert size={12} className="shrink-0" />
+                {msg.text}
+              </span>
+            ) : msg.text.toLowerCase().includes("success") || msg.text.toLowerCase().includes("executed") ? (
+              <span className="text-emerald-400 font-medium">
+                {msg.text}
+              </span>
+            ) : (
+              <span className="text-slate-300 group-hover:text-white transition-colors">
+                {msg.text}
+              </span>
+            )}
+          </div>
+        ))}
+        
+        {/* Auto Scroll Anchor */}
+        <div ref={terminalEndRef} />
+      </div>
     </div>
   );
 }
