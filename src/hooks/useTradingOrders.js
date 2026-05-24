@@ -124,18 +124,11 @@ export function useTradingOrders() {
         stock.stock
       )}`;
 
-      const response = await fetch(
-        `https://corsproxy.io/?${encodeURIComponent(
-          yahooUrl
-        )}`
-      );
+     
 
-      const result = await response.json();
+      const result = await yahooUrl.json();
 
-      console.log(
-        "YAHOO FINANCE RESPONSE:",
-        result
-      );
+      
 
       const yahooSymbol =
         result.quotes?.[0]?.symbol ||
