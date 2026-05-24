@@ -120,21 +120,18 @@ export function useTradingOrders() {
     setIsLoadingStock(true);
 
     try {
-   const yahooUrl = `https://query1.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(
-  stock.stock
-)}`;
+    const response = await fetch(
+    `${API_CONFIG.NAG}/symbol-search?q=${stock.stock}`
+  );
 
-const response = await fetch(yahooUrl);
+  const data = await response.json();
 
-const result = await response.json();
-
-const yahooSymbol =
-  result.quotes?.[0]?.symbol || stock.stock;
-
-console.log(yahooSymbol);
-
-      setSymbol(yahooSymbol.replace(".NS", ""));
-
+ 
+  
+if(data.data.length >0)
+      setSymbol(data.data[0].symbol);
+else
+  setSymbol("")
       setPrice(
         Number(stock.currentPrice) || 0
       );
