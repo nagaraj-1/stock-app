@@ -236,7 +236,7 @@ export default function OrdersView({
                             ...prev,
                             [order.order_id]: true,
                           }));
-                          onTrackOrder(order.tableUser, order.order_id);
+                          onTrackOrder(order.tableUser, order.order_id,sellPrice);
                         }}
                         className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-indigo-600 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-indigo-700"
                       >

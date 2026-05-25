@@ -6,12 +6,7 @@ export default function LiveResponse({ user = "ALL" }) {
   const [status, setStatus] = useState("disconnected"); // connected, disconnected, error
   const wsRef = useRef(null);
   const reconnectTimeout = useRef(null);
-  const terminalEndRef = useRef(null);
-
-  // Auto-scroll to bottom on new messages
-  useEffect(() => {
-    terminalEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+ 
 
   const connectWebSocket = () => {
     const WS_URL = user === "NAG" ? "wss://stock.eatoo.in/api/ws" : "wss://stock1.eatoo.in/api/ws";
@@ -131,9 +126,8 @@ export default function LiveResponse({ user = "ALL" }) {
             )}
           </div>
         ))}
-        
-        {/* Auto Scroll Anchor */}
-        <div ref={terminalEndRef} />
+      
+       
       </div>
       <div className="flex items-center gap-2">
   <button

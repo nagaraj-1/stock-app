@@ -120,18 +120,18 @@ export function useTradingOrders() {
     setIsLoadingStock(true);
 
     try {
-    const response = await fetch(
-    `${API_CONFIG.NAG}/symbol-search?q=${stock.stock}`
-  );
+      const response = await fetch(
+        `${API_CONFIG.NAG}/symbol-search?q=${stock.stock}`
+      );
 
-  const data = await response.json();
+      const data = await response.json();
 
- 
-  
-if(data.data.length >0)
-      setSymbol(data.data[0].symbol);
-else
-  setSymbol("")
+
+
+      if (data.data.length > 0)
+        setSymbol(data.data[0].symbol);
+      else
+        setSymbol("")
       setPrice(
         Number(stock.currentPrice) || 0
       );
@@ -216,7 +216,7 @@ else
 
   const aiModeOrderTrack = async (
     user1,
-    orderId
+    orderId, sell_price
   ) => {
     try {
       console.log("AI MODE TRACK:", {
@@ -227,7 +227,7 @@ else
       const url = API_CONFIG[user1];
 
       const response = await fetch(
-        `${url}/live-track?order_id=${orderId}&sell_price=1500`,
+        `${url}/live-track?order_id=${orderId}&sell_price=${sell_price}`,
         {
           method: "GET",
         }
@@ -298,7 +298,7 @@ else
   // EXECUTE ORDER
   const executeOrder = async () => {
     try {
-      console.log(user);
+      setIsLoadingStock(true);
 
       const url = API_CONFIG[user];
 
@@ -315,6 +315,8 @@ else
 
       // AUTO REFRESH ORDERS
       if (data.success) {
+        setIsLoadingStock(false);
+
         await fetchOrders();
       }
     } catch (error) {
@@ -325,9 +327,9 @@ else
     }
   };
 
-  const sellOrder = async (order,sellPrice) => {
+  const sellOrder = async (order, sellPrice) => {
     try {
-
+      setIsLoadingStock(true);
       console.log({
         symbol: order.tradingsymbol,
         user: order.tableUser,
@@ -351,6 +353,7 @@ else
 
       // AUTO REFRESH ORDERS
       if (data.success) {
+        setIsLoadingStock(false);
         await fetchOrders();
       }
     } catch (error) {
