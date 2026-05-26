@@ -88,8 +88,8 @@ export default function App() {
             />
 
             {isNagAiActive
-              ? "NAG AI ACTIVE"
-              : "ENABLE NAG AI"}
+              ? "N-AI"
+              : "N-AI"}
           </button>
 
           {/* CUTIE AI */}
@@ -115,8 +115,8 @@ export default function App() {
             />
 
             {isCutieAiActive
-              ? "CUTIE AI ACTIVE"
-              : "ENABLE CUTIE AI"}
+              ? "C-AI"
+              : "C-AI"}
           </button>
 
         </div>

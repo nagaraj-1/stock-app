@@ -297,7 +297,7 @@ export function useTradingOrders() {
 
           const res = await fetch(`${API_CONFIG.NAG}/stocks`);
           let scannerData = await res.json();
-          console.log("scannerDatascannerDatascannerData ",scannerData)
+          console.log("scannerDatascannerDatascannerData ", scannerData)
           scannerData = scannerData = scannerData?.data[0]?.data.sort(
             (b, a) => Number(a.percentage) - Number(b.percentage)
           );
@@ -331,6 +331,17 @@ export function useTradingOrders() {
                 (o) => o.tableUser === aiUser && o.tradingsymbol === stockSymbol
                   && o.status?.toUpperCase() === "COMPLETE"
               );
+
+
+              const sellOrderCheck = orderList.find(
+                (o) => o.tableUser === aiUser && o.transaction_type == "SELL" && o.status?.toUpperCase() === "TRIGGER PENDING"
+              );
+              
+              if (sellOrderCheck)
+                continue;
+
+
+
 
               if (!isExecuted) {
                 const pendingOrder = orderList.find(
