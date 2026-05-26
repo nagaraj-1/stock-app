@@ -333,7 +333,7 @@ export function useTradingOrders() {
 
               if (!isExecuted) {
                 const pendingOrder = orderList.find(
-                  (o) => o.tableUser === aiUser && o.status?.toUpperCase() === "AMO REQ RECEIVED"
+                  (o) => o.tableUser === aiUser && o.status?.toUpperCase() === "TRIGGER PENDING"
                 );
                 console.log("PENDING ORDER:", pendingOrder);
                 if (pendingOrder) {
@@ -361,14 +361,31 @@ export function useTradingOrders() {
                 const sPercent = Number(stock.percentage) || 0;
                 const calcTargetPrice = Math.round(((sPrice / (1 + sPercent / 100)) * (1 + targetPercent / 100)) * 100) / 100;
 
+                const buyPercentage = targetPercent;
+                const sellPercentage = 16.5;
+                const sellPrice = (
+                  (price / (1 + buyPercentage / 100)) *
+                  (1 + sellPercentage / 100)
+                ).toFixed(2);
+
                 console.log(calcTargetPrice);
                 const investment = aiUser === "CUTIE" ? Number(cInvestment) : Number(nInvestment);
                 const calcQty = Math.floor(investment / (calcTargetPrice / 5)) || 0;
 
                 // Place new order
                 const buyUrl = API_CONFIG[aiUser];
-                await fetch(`${buyUrl}/buy?symbol=${stockSymbol}&qty=${calcQty}&trigger_price=${calcTargetPrice}`, { method: "POST" });
+                const response = await fetch(
+                  `${buyUrl}/buy?symbol=${stockSymbol}&qty=${calcQty}&trigger_price=${calcTargetPrice}`,
+                  {
+                    method: "POST",
+                  }
+                );
+
+                const data = await response.json();
+
+                console.log("BUY RESPONSE:", data);
                 await fetchOrders();
+                aiModeOrderTrack(aiUser, data.order_id, calcTargetPrice);
               }
             }
           }
