@@ -297,7 +297,8 @@ export function useTradingOrders() {
 
           const res = await fetch(`${API_CONFIG.NAG}/stocks`);
           let scannerData = await res.json();
-          scannerData = scannerData = scannerData.data.data.sort(
+          console.log("scannerDatascannerDatascannerData ",scannerData)
+          scannerData = scannerData = scannerData?.data[0]?.data.sort(
             (b, a) => Number(a.percentage) - Number(b.percentage)
           );
           console.log("SCANNER DATA:", scannerData);
