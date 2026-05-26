@@ -14,6 +14,8 @@ export function useTradingOrders() {
   const [isLoadingStock, setIsLoadingStock] =
     useState(false);
 
+  const [pendingPopup, setPendingPopup] = useState(null);
+
   // SETTINGS
   const [cInvestment, setCInvestment] =
     useState(
@@ -57,6 +59,12 @@ export function useTradingOrders() {
 
   const [manualTargetQty, setManualTargetQty] =
     useState("");
+
+  const [isNagAiActive, setIsNagAiActive] =
+    useState(false);
+
+  const [isCutieAiActive, setIsCutieAiActive] =
+    useState(false);
 
   // AUTO TARGET PRICE
   const calculatedTargetPrice = useMemo(() => {
@@ -201,6 +209,7 @@ export function useTradingOrders() {
       console.log("MERGED:", merged);
 
       setOrders(merged);
+      return merged;
     } catch (error) {
       console.log(
         "Error fetching orders:",
@@ -209,10 +218,169 @@ export function useTradingOrders() {
     }
   };
 
+  const handlePendingOrderPopup = (stockSymbol, pendingOrder) => {
+    return new Promise((resolve) => {
+      let handled = false;
+
+      // AUTO ACTION AFTER 10 SEC
+      const timer = setTimeout(async () => {
+        if (handled) return;
+        handled = true;
+
+        console.log("No response -> Auto cancel order");
+
+        await calcelOrders(
+          pendingOrder.tableUser,
+          pendingOrder.order_id
+        );
+
+        setPendingPopup(null);
+
+        resolve("continue");
+      }, 10000);
+
+      setPendingPopup({
+        stockSymbol,
+
+        onSkip: () => {
+          if (handled) return;
+          handled = true;
+
+          clearTimeout(timer);
+
+          setPendingPopup(null);
+
+          if (pendingOrder.tableUser === "NAG")
+            setIsNagAiActive(false);
+          else
+            setIsCutieAiActive(false);
+
+
+          resolve("skip");
+        },
+
+        onContinue: async () => {
+          if (handled) return;
+          handled = true;
+
+          clearTimeout(timer);
+
+          await calcelOrders(
+            pendingOrder.tableUser,
+            pendingOrder.order_id
+          );
+
+          setPendingPopup(null);
+
+          resolve("continue");
+        },
+      });
+    });
+  };
+
   // LOAD ON START
   useEffect(() => {
     fetchOrders();
   }, []);
+
+  useEffect(() => {
+    let interval;
+
+    if (isNagAiActive || isCutieAiActive) {
+
+      const runAiLogic = async () => {
+        try {
+
+          const aiUser = isNagAiActive ? "NAG" : "CUTIE";
+
+          console.log("Running AI Logic...");
+
+          const res = await fetch(`${API_CONFIG.NAG}/stocks`);
+          let scannerData = await res.json();
+          scannerData = scannerData = scannerData.data.data.sort(
+            (b, a) => Number(a.percentage) - Number(b.percentage)
+          );
+          console.log("SCANNER DATA:", scannerData);
+          if (!scannerData) return;
+
+          const orderList = await fetchOrders();
+
+          let hasTriggeredOrder = false;
+
+          for (const stock of scannerData) {
+
+
+
+            if (Number(stock.percentage) > 14.5 && Number(stock.percentage) < 15.30) {
+              if (hasTriggeredOrder) break;
+              hasTriggeredOrder = true;
+
+              console.log(`Evaluating ${stock}: ${stock.percentage}%`);
+
+              const response = await fetch(
+                `${API_CONFIG.NAG}/symbol-search?q=${stock.stock}`
+              );
+
+              const data = await response.json();
+              let stockSymbol
+              if (data.data.length > 0)
+                stockSymbol = data.data[0].symbol;
+
+              const isExecuted = orderList.some(
+                (o) => o.tableUser === aiUser && o.tradingsymbol === stockSymbol
+                  && o.status?.toUpperCase() === "COMPLETE"
+              );
+
+              if (!isExecuted) {
+                const pendingOrder = orderList.find(
+                  (o) => o.tableUser === aiUser && o.status?.toUpperCase() === "AMO REQ RECEIVED"
+                );
+                console.log("PENDING ORDER:", pendingOrder);
+                if (pendingOrder) {
+
+                  if (pendingOrder.tradingsymbol === stockSymbol) {
+                    console.log("SAME pending order exists, skipping popup.");
+                    continue;
+                  }
+
+                  const action = await handlePendingOrderPopup(
+                    stockSymbol,
+                    pendingOrder
+                  );
+
+                  if (action === "skip") {
+                    if (aiUser === "NAG")
+                      setIsNagAiActive(false);
+                    else
+                      setIsCutieAiActive(false);
+                    return;
+                  }
+                }
+
+                const sPrice = Number(stock.currentPrice) || 0;
+                const sPercent = Number(stock.percentage) || 0;
+                const calcTargetPrice = Math.round(((sPrice / (1 + sPercent / 100)) * (1 + targetPercent / 100)) * 100) / 100;
+
+                console.log(calcTargetPrice);
+                const investment = aiUser === "CUTIE" ? Number(cInvestment) : Number(nInvestment);
+                const calcQty = Math.floor(investment / (calcTargetPrice / 5)) || 0;
+
+                // Place new order
+                const buyUrl = API_CONFIG[aiUser];
+                await fetch(`${buyUrl}/buy?symbol=${stockSymbol}&qty=${calcQty}&trigger_price=${calcTargetPrice}`, { method: "POST" });
+                await fetchOrders();
+              }
+            }
+          }
+        } catch (error) {
+          console.error("AI Mode Error:", error);
+        }
+      };
+
+      interval = setInterval(runAiLogic, 20000);
+    }
+    return () => clearInterval(interval);
+  }, [isNagAiActive, isCutieAiActive, targetPercent, user, cInvestment, nInvestment]);
 
   const aiModeOrderTrack = async (
     user1,
@@ -396,7 +564,8 @@ export function useTradingOrders() {
       aiModeOrderTrack,
       stopTracking,
       sellOrder,
-
+      setIsNagAiActive,
+      setIsCutieAiActive,
       // MANUAL EDITS
       setManualTargetPrice,
       setManualTargetQty,
@@ -405,5 +574,8 @@ export function useTradingOrders() {
     orders,
     showSettings,
     isLoadingStock,
+    isNagAiActive,
+    isCutieAiActive,
+    pendingPopup
   };
 }
