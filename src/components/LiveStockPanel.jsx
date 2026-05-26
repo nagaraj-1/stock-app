@@ -1,5 +1,10 @@
 import { useEffect, useState } from "react";
-import { LineChart, TrendingUp, TrendingDown, Activity, ArrowRight } from "lucide-react";
+import {
+  TrendingUp,
+  TrendingDown,
+  Activity,
+} from "lucide-react";
+
 import API_CONFIG from "../config/apiConfig";
 
 export default function LiveStockPanel({ onSelectStock }) {
@@ -10,8 +15,15 @@ export default function LiveStockPanel({ onSelectStock }) {
     try {
       const response = await fetch(`${API_CONFIG.STOCK}/stocks`);
       const result = await response.json();
+
       const latestData = result?.data?.[result.data.length - 1];
-      setStocks(latestData?.data || []);
+
+      // SORT HIGH TO LOW %
+      const sortedStocks = (latestData?.data || []).sort(
+        (a, b) => Number(b.percentage) - Number(a.percentage)
+      );
+
+      setStocks(sortedStocks);
     } catch (error) {
       console.error("API ERROR:", error);
     } finally {
@@ -21,101 +33,118 @@ export default function LiveStockPanel({ onSelectStock }) {
 
   useEffect(() => {
     fetchStocks();
+
     const interval = setInterval(fetchStocks, 30000);
+
     return () => clearInterval(interval);
   }, []);
 
   return (
-    <div className="flex h-[400px] w-full max-w flex-col overflow-hidden rounded-2xl border border-slate-100 bg-slate-50/50 shadow-xl backdrop-blur-md">
-      {/* HEADER */}
-      <div className="sticky top-0 z-10 border-b border-slate-100 bg-white/80 px-5 py-4 backdrop-blur-md">
-        
+    <div className="flex h-[250px] w-full flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
 
-        {/* REFRESH STATUS */}
-        <div className="mt-3 flex items-center justify-between rounded-lg bg-slate-100/70 px-3 py-1.5">
-          <div className="flex items-center gap-2">
-            <span className="relative flex h-2 w-2">
+      {/* HEADER */}
+      <div className="border-b border-slate-100 px-3 py-2">
+        <div className="flex items-center justify-between rounded-md bg-slate-50 px-2 py-1">
+
+          {/* LIVE STATUS */}
+          <div className="flex items-center gap-1.5">
+            <span className="relative flex h-1.5 w-1.5">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
+
+              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
             </span>
-            <span className="text-[10px] font-semibold tracking-wide text-slate-600">
-              Live
+
+            <span className="text-[9px] font-semibold text-slate-600 uppercase">
+              Live Stocks
             </span>
           </div>
-          <span className="text-[9px] font-medium text-slate-400 uppercase tracking-wider">
+
+          <span className="text-[8px] text-slate-400">
             Every 30s
           </span>
         </div>
       </div>
 
-      {/* SCROLLABLE BODY */}
-      <div className="flex-1 overflow-y-auto px-4 py-3 scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
+      {/* BODY */}
+      <div className="flex-1 overflow-y-auto px-2 py-2 space-y-1">
+
         {loading ? (
-          <div className="flex h-full flex-col items-center justify-center gap-2">
-            <Activity className="animate-pulse text-indigo-500" size={18} />
-            <p className="text-[11px] font-medium text-slate-400">
-              Fetching market feeds...
+          <div className="flex h-full flex-col items-center justify-center gap-1">
+            <Activity
+              className="animate-pulse text-indigo-500"
+              size={14}
+            />
+
+            <p className="text-[10px] text-slate-400">
+              Loading...
             </p>
           </div>
+
         ) : stocks.length === 0 ? (
+
           <div className="flex h-full items-center justify-center">
-            <p className="text-[11px] font-medium text-slate-400">
-              No active stocks found
+            <p className="text-[10px] text-slate-400">
+              No stocks found
             </p>
           </div>
+
         ) : (
-          <div className="space-y-2">
-            {stocks.map((stock, index) => {
-              const changeValue = Number(stock.percentage);
-              const isPositive = changeValue >= 0;
 
-              return (
-                <button
-                  key={index}
-                  type="button"
-                  onClick={() => onSelectStock?.(stock)}
-                  className="group relative flex w-full items-center justify-between rounded-xl border border-slate-100 bg-white p-3.5 shadow-sm transition-all duration-200 hover:border-slate-200 hover:bg-slate-50/60 hover:shadow-md"
-                >
-                  {/* LEFT: STOCK INFO */}
-                  <div className="flex flex-col gap-1">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-xs font-bold tracking-tight text-slate-800 transition-colors group-hover:text-indigo-600">
-                        {stock.stock}
-                      </span>
-                      <ArrowRight
-                        size={10}
-                        className="opacity-0 -translate-x-1 transition-all duration-200 group-hover:opacity-100 group-hover:translate-x-0 text-indigo-500"
-                      />
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <span className="text-[10px] font-medium text-slate-400">Price:</span>
-                      <span className="text-xs font-semibold text-slate-700">
-                        ₹{Number(stock.currentPrice).toLocaleString("en-IN")}
-                      </span>
-                    </div>
-                  </div>
+          stocks.map((stock, index) => {
+            const changeValue = Number(stock.percentage);
+            const isPositive = changeValue >= 0;
 
-                  {/* RIGHT: PERFORMANCE BADGE */}
-                  <div
-                    className={`flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-bold tracking-tight ${isPositive
-                        ? "bg-emerald-50 text-emerald-700 border border-emerald-100"
-                        : "bg-rose-50 text-rose-700 border border-rose-100"
-                      }`}
-                  >
-                    {isPositive ? (
-                      <TrendingUp size={12} className="text-emerald-600" />
-                    ) : (
-                      <TrendingDown size={12} className="text-rose-600" />
-                    )}
-                    <span>
-                      {isPositive ? "+" : ""}
-                      {changeValue}%
+            return (
+              <button
+                key={index}
+                type="button"
+                onClick={() => onSelectStock?.(stock)}
+                className="flex w-full items-center justify-between rounded-lg border border-slate-100 bg-white  transition hover:bg-slate-50"
+              >
+
+                {/* LEFT + RIGHT */}
+                <div className="flex w-full items-center justify-between">
+
+                  {/* STOCK NAME */}
+                  <span className="text-[11px] font-semibold text-slate-800">
+                    {stock.stock}
+                  </span>
+
+                  {/* RIGHT SIDE */}
+                  <div className="flex items-center gap-2">
+
+                    {/* AMOUNT */}
+                    <span className="text-[10px] font-medium text-slate-600">
+                      ₹
+                      {Number(stock.currentPrice).toLocaleString("en-IN")}
                     </span>
+
+                    {/* PERCENTAGE */}
+                    <div
+                      className={`flex items-center gap-1 rounded-md px-1.5 py-1 text-[10px] font-bold ${
+                        isPositive
+                          ? "bg-emerald-50 text-emerald-700"
+                          : "bg-rose-50 text-rose-700"
+                      }`}
+                    >
+                      {isPositive ? (
+                        <TrendingUp size={10} />
+                      ) : (
+                        <TrendingDown size={10} />
+                      )}
+
+                      <span>
+                        {isPositive ? "+" : ""}
+                        {changeValue}%
+                      </span>
+                    </div>
+
                   </div>
-                </button>
-              );
-            })}
-          </div>
+                </div>
+              </button>
+            );
+          })
+
         )}
       </div>
     </div>

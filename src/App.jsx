@@ -6,14 +6,21 @@ import SettingsModal from "./components/SettingsModal";
 import { useTradingOrders } from "./hooks/useTradingOrders";
 import LiveResponse from "./components/LiveResponse";
 import { Brain } from "lucide-react";
-
+import { Settings } from "lucide-react";
 export default function App() {
   const { fields, actions, orders, showSettings, isLoadingStock, isNagAiActive,
     isCutieAiActive, pendingPopup } = useTradingOrders();
 
   return (
     <div className="min-h-screen flex flex-col bg-[#f8fafc] text-slate-900 antialiased">
-
+      {/* FIXED SETTINGS BUTTON */}
+      <button
+        type="button"
+        onClick={() => actions.setShowSettings(true)}
+        className="fixed right-0 top-[5%] z-50 flex h-8 w-8 items-center justify-center rounded-l-lg border border-r-0 border-slate-200 bg-white text-slate-600 shadow-md transition hover:bg-slate-50"
+      >
+        <Settings size={14} />
+      </button>
       {/* Pending Order Popup */}
       {/* Pending Order Popup */}
       {pendingPopup && (
@@ -55,15 +62,10 @@ export default function App() {
         </div>
       )}
 
-      <header className="w-full bg-white border-b border-slate-200 flex items-center justify-between px-6 py-4">
-        <div className="flex-1">
-          <TradingHeader
-            onOpenSettings={() => actions.setShowSettings(true)}
-            onExecuteOrder={actions.executeOrder}
-          />
-        </div>
+      <header className="w-full border-b border-slate-200 bg-white px-3 py-2">
 
-        <div className="ml-4 flex items-center gap-3">
+        {/* RIGHT FLOATING AI BUTTONS */}
+        <div className="fixed right-2 top-[0%] z-40 flex items-center gap-1.5">
 
           {/* NAG AI */}
           <button
@@ -73,13 +75,13 @@ export default function App() {
                 !isNagAiActive
               )
             }
-            className={`flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-black transition-all duration-300 ${isNagAiActive
-                ? "bg-indigo-600 text-white shadow-xl"
-                : "bg-slate-100 text-slate-500"
+            className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[10px] font-bold transition-all ${isNagAiActive
+                ? "bg-indigo-600 text-white shadow-md"
+                : "bg-white text-slate-500 border border-slate-200"
               }`}
           >
             <Brain
-              size={18}
+              size={12}
               className={
                 isNagAiActive
                   ? "animate-pulse"
@@ -87,9 +89,7 @@ export default function App() {
               }
             />
 
-            {isNagAiActive
-              ? "N-AI"
-              : "N-AI"}
+            N-AI
           </button>
 
           {/* CUTIE AI */}
@@ -100,13 +100,13 @@ export default function App() {
                 !isCutieAiActive
               )
             }
-            className={`flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-black transition-all duration-300 ${isCutieAiActive
-                ? "bg-pink-600 text-white shadow-xl"
-                : "bg-slate-100 text-slate-500"
+            className={`flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[10px] font-bold transition-all ${isCutieAiActive
+                ? "bg-pink-600 text-white shadow-md"
+                : "bg-white text-slate-500 border border-slate-200"
               }`}
           >
             <Brain
-              size={18}
+              size={12}
               className={
                 isCutieAiActive
                   ? "animate-pulse"
@@ -114,12 +114,11 @@ export default function App() {
               }
             />
 
-            {isCutieAiActive
-              ? "C-AI"
-              : "C-AI"}
+            C-AI
           </button>
 
         </div>
+
       </header>
 
       <main className="flex-1 p-4 md:p-6 space-y-6">
@@ -134,7 +133,7 @@ export default function App() {
         )}
 
         {/* Dashboard Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
           {/* Top Row: Form and Stock Panel */}
           <div className="lg:col-span-2">
             <OrderForm

@@ -1,7 +1,6 @@
 import { useState } from "react";
 import {
   Circle,
-  Hash,
   Clock,
   ArrowUpRight,
   ArrowDownRight,
@@ -14,28 +13,60 @@ import {
 
 const STATUS_STYLES = {
   COMPLETE: {
-    text: "text-emerald-600 bg-emerald-50 border-emerald-100",
-    dot: "bg-emerald-500",
+    text: "text-emerald-700 bg-emerald-50/80 border-emerald-100",
+    dot: "bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.5)]",
     accent: "bg-emerald-500",
+    cardBg: "hover:bg-emerald-50/10",
   },
   PENDING: {
-    text: "text-amber-600 bg-amber-50 border-amber-100",
-    dot: "bg-amber-500",
+    text: "text-amber-700 bg-amber-50/80 border-amber-100",
+    dot: "bg-amber-500 animate-pulse shadow-[0_0_6px_rgba(245,158,11,0.5)]",
     accent: "bg-amber-500",
+    cardBg: "hover:bg-amber-50/10",
   },
   CANCELLED: {
-    text: "text-slate-500 bg-slate-50 border-slate-100",
+    text: "text-slate-500 bg-slate-100/80 border-slate-200",
     dot: "bg-slate-400",
-    accent: "bg-slate-400",
+    accent: "bg-slate-300",
+    cardBg: "hover:bg-slate-50/50 opacity-75",
   },
 };
 
-const USER_STYLES = {
-  // NAG: Dark Blue - Indigo 800/900 range
-  NAG: "bg-indigo-100 text-indigo-900 border-indigo-200",
-  
-  // CUTIE: Dark Pink - Fushia 800/900 range
-  CUTIE: "bg-fuchsia-100 text-fuchsia-900 border-fuchsia-200",
+// Configured explicit theme overrides for specific core users
+const USER_THEME_PRESETS = {
+  NAG: "from-indigo-50 to-cyan-50 text-indigo-700 border-indigo-100 shadow-[0_1px_2px_rgba(99,102,241,0.05)]",
+  CUTIE: "from-fuchsia-50 to-rose-50 text-fuchsia-700 border-fuchsia-100 shadow-[0_1px_2px_rgba(217,70,239,0.05)]",
+};
+
+/**
+ * Fallback dynamic theme builder. Generates beautiful color pairings deterministically
+ * based on the user's string name if they aren't explicitly declared above.
+ */
+const getUserStyle = (username) => {
+  if (!username) {
+    return "from-slate-50 to-slate-100 text-slate-700 border-slate-200 shadow-sm";
+  }
+
+  if (USER_THEME_PRESETS[username]) {
+    return USER_THEME_PRESETS[username];
+  }
+
+  // Basic string-hashing algorithm to pick dynamic color sets for unknown users smoothly
+  let hash = 0;
+  for (let i = 0; i < username.length; i++) {
+    hash = username.charCodeAt(i) + ((hash << 5) - hash);
+  }
+
+  const palettes = [
+    "from-blue-50 to-sky-50 text-blue-700 border-blue-100",
+    "from-violet-50 to-purple-50 text-violet-700 border-violet-100",
+    "from-amber-50 to-orange-50 text-amber-700 border-amber-100",
+    "from-teal-50 to-emerald-50 text-teal-700 border-teal-100",
+    "from-pink-50 to-rose-50 text-pink-700 border-pink-100",
+  ];
+
+  const selectedIndex = Math.abs(hash) % palettes.length;
+  return `${palettes[selectedIndex]} shadow-sm`;
 };
 
 export default function OrdersView({
@@ -45,39 +76,29 @@ export default function OrdersView({
   onStopTrackOrder,
   onSellOrder,
 }) {
-  // ==========================================
-  // TRACKING STATE
-  // ==========================================
   const [trackingOrders, setTrackingOrders] = useState({});
-
-  // ==========================================
-  // SELL PERCENTAGE STATE
-  // ==========================================
   const [sellPercentages, setSellPercentages] = useState({});
 
   return (
-    <section className="h-[400px]  flex flex-col rounded-3xl border border-slate-200 bg-white shadow-[0_20px_55px_-32px_rgba(15,23,42,0.45)] overflow-hidden"> 
-      
+    <section className="flex h-[250px] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-200 hover:shadow-md">
+      {/* EMPTY STATE */}
       {orders.length === 0 ? (
-        <div className="m-5 flex h-56 flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50/60 p-6 sm:m-7">
-          <div className="mb-3 rounded-2xl bg-white p-3 text-slate-400 shadow-sm">
-            <Layers3 size={22} />
+        <div className="flex h-full flex-col items-center justify-center gap-3 text-slate-400 bg-slate-50/30">
+          <div className="rounded-full bg-slate-100 p-2 text-slate-400/80">
+            <Layers3 size={20} />
           </div>
-          <p className="text-sm font-semibold text-slate-600">
-            No live orders yet
-          </p>
-          <p className="mt-1 text-xs text-slate-400">
-            New orders will appear here automatically.
+          <p className="text-xs font-semibold tracking-wide text-slate-400 uppercase">
+            No Active Orders
           </p>
         </div>
       ) : (
-        /* SCROLLABLE CARD GRID CONTAINER */
-        <div className="max-h-[580px] overflow-y-auto p-5 sm:p-7 bg-slate-50/40">
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-2">
+        <div className="flex-1 overflow-y-auto bg-slate-50/40 p-3 scrollbar-thin">
+          <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
             {orders.map((order, index) => {
               const price =
                 Number(order.average_price) ||
                 Number(order.trigger_price) ||
+                Number(order.price) ||
                 0;
 
               const isBuy = order.transaction_type === "BUY";
@@ -85,17 +106,13 @@ export default function OrdersView({
               const statusStyle =
                 STATUS_STYLES[order.status] || STATUS_STYLES.PENDING;
 
-              const userStyle =
-                USER_STYLES[order.tableUser] ||
-                "bg-slate-50 text-slate-600 border-slate-200";
+              // Generates or reads custom user style theme configurations dynamically
+              const userThemeStyles = getUserStyle(order.tableUser);
 
               const isTracking = trackingOrders[order.order_id];
-
-              // ==========================================
-              // SELL CALCULATION
-              // ==========================================
               const buyPercentage = 15.55;
-              const sellPercentage = sellPercentages[order.order_id] ?? 16.5;
+              const sellPercentage = sellPercentages[order.order_id] ?? 16.8;
+
               const sellPrice = (
                 (price / (1 + buyPercentage / 100)) *
                 (1 + sellPercentage / 100)
@@ -104,171 +121,172 @@ export default function OrdersView({
               return (
                 <div
                   key={order.order_id || index}
-                  className="relative flex flex-col justify-between overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:shadow-md"
+                  className={`group relative overflow-hidden rounded-xl border border-slate-200/80 bg-white p-3 shadow-sm transition-all duration-200 ${statusStyle.cardBg}`}
                 >
-                  {/* Left Accent Status Bar */}
+                  {/* LEFT STATUS BAR */}
                   <span
-                    className={`absolute bottom-0 left-0 top-0 w-1.5 ${statusStyle.accent}`}
+                    className={`absolute bottom-0 left-0 top-0 w-1 transition-all duration-200 group-hover:w-1.5 ${statusStyle.accent}`}
                   />
 
-                  {/* HEADER: User, Status & ID */}
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <span
-                        className={`inline-flex rounded-md border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${userStyle}`}
-                      >
-                        {order.tableUser || "SYSTEM"}
-                      </span>
-                      <p className="mt-1.5 flex items-center gap-1 font-mono text-[11px] text-slate-400">
-                        <Hash size={11} />
-                        {order.order_id || "N/A"}
-                      </p>
-                    </div>
+                  {/* TOP SUMMARY ROW */}
+                  <div className="flex items-start justify-between gap-2 pl-1">
+                    {/* LEFT INFO BLOCK */}
+                    <div className="min-w-0 flex-1">
+                      {/* SYMBOL & USER ROW */}
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span
+                          className={`rounded border bg-gradient-to-br px-1 py-0.5 text-[8px] font-extrabold tracking-wide uppercase transition-all duration-300 ${userThemeStyles}`}
+                        >
+                          {order.tableUser || "SYS"}
+                        </span>
 
-                    <span
-                      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-bold ${statusStyle.text}`}
-                    >
-                      <Circle
-                        size={6}
-                        className={`fill-current ${statusStyle.dot}`}
-                      />
-                      {order.status || "PENDING"}
-                    </span>
-                  </div>
+                        <span className="truncate text-xs font-bold tracking-tight text-slate-800">
+                          {order.tradingsymbol}
+                        </span>
 
-                  {/* INSTRUMENT & SIDE */}
-                  <div className="mt-4 flex items-center justify-between">
-                    <div>
-                      <h4 className="font-bold text-slate-900 text-base">
-                        {order.tradingsymbol || "--"}
-                      </h4>
-                      <p className="mt-0.5 flex items-center gap-1 text-xs text-slate-400">
-                        <Clock size={12} />
-                        {order.order_timestamp
-                          ? new Date(order.order_timestamp).toLocaleTimeString([], {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                              second: "2-digit",
-                            })
-                          : "--:--:--"}
-                      </p>
-                    </div>
+                        <span
+                          className={`inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[8px] font-extrabold tracking-wide ${
+                            isBuy
+                              ? "bg-emerald-50 text-emerald-700 border border-emerald-100"
+                              : "bg-rose-50 text-rose-700 border border-rose-100"
+                          }`}
+                        >
+                          {isBuy ? (
+                            <ArrowUpRight size={10} className="stroke-[3]" />
+                          ) : (
+                            <ArrowDownRight size={10} className="stroke-[3]" />
+                          )}
+                          {order.transaction_type}
+                        </span>
+                      </div>
 
-                    <span
-                      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold ${
-                        isBuy
-                          ? "bg-emerald-50 text-emerald-700"
-                          : "bg-rose-50 text-rose-700"
-                      }`}
-                    >
-                      {isBuy ? <ArrowUpRight size={13} /> : <ArrowDownRight size={13} />}
-                      {order.transaction_type || "--"}
-                    </span>
-                  </div>
+                      {/* DATA MATRIX */}
+                      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[9px] text-slate-500">
+                        <span>
+                          Buy:{" "}
+                          <span className="font-bold text-slate-900">
+                            ₹
+                            {Number(
+                              order.trigger_price || order.price || 0
+                            ).toFixed(2)}
+                          </span>
+                        </span>
 
-                  <hr className="my-4 border-slate-100" />
+                        <span>
+                          Qty:{" "}
+                          <span className="font-bold text-slate-700">
+                            {Number(order.quantity || 0).toLocaleString()}
+                          </span>
+                        </span>
 
-                  {/* INFO METRICS GRID */}
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <p className="text-xs font-medium text-slate-400">Quantity</p>
-                      <p className="mt-0.5 font-mono font-semibold text-slate-700">
-                        {Number(order.quantity || 0).toLocaleString()}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-medium text-slate-400">Buy Price</p>
-                      <p className="mt-0.5 font-mono font-bold text-slate-900">
-                        {order.trigger_price ? order.trigger_price : order.price}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* PRICING INPUTS / OUTPUTS */}
-                  <div className="mt-4 grid grid-cols-2 gap-3 items-center">
-                    <div>
-                      <p className="text-xs font-medium text-slate-400 mb-1">Sell %</p>
-                      <div className="flex items-center gap-1.5">
-                        <input
-                          type="number"
-                          step="0.1"
-                          value={sellPercentage}
-                          onChange={(e) =>
-                            setSellPercentages((prev) => ({
-                              ...prev,
-                              [order.order_id]: Number(e.target.value),
-                            }))
-                          }
-                          className="w-full rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-sm font-semibold text-slate-700 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
-                        />
-                        <span className="text-sm font-bold text-slate-400">%</span>
+                        <span className="flex items-center gap-0.5 text-slate-400 font-medium">
+                          <Clock size={9} className="opacity-80" />
+                          {order.order_timestamp
+                            ? new Date(order.order_timestamp).toLocaleTimeString([], {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })
+                            : "--"}
+                        </span>
                       </div>
                     </div>
 
-                    <div>
-                      <p className="text-xs font-medium text-slate-400 mb-1">Sell Price</p>
-                      <div className="rounded-xl bg-emerald-50 px-2.5 py-1.5 text-sm font-bold text-emerald-700 text-center">
-                        ₹{sellPrice}
-                    </div>
-                    </div>
+                    {/* STATUS CHIP */}
+                    <span
+                      className={`inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[8px] font-bold tracking-wider uppercase shadow-sm ${statusStyle.text}`}
+                    >
+                      <Circle size={4} className={`fill-current ${statusStyle.dot}`} />
+                      {order.status}
+                    </span>
                   </div>
 
-                  <hr className="my-4 border-slate-100" />
+                  {/* DIVIDER */}
+                  <hr className="my-2.5 border-dashed border-slate-100 pl-1" />
 
-                  {/* ACTIONS */}
-                  <div className="flex items-center gap-2">
-                    {/* SELL */}
-                    <button
-                      type="button"
-                      onClick={() => onSellOrder(order, sellPrice)}
-                      className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 py-2 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-100"
-                    >
-                      <TrendingDown size={13} />
-                      Sell
-                    </button>
+                  {/* BOTTOM ACTION SECTION */}
+                  <div className="flex items-center justify-between gap-2 pl-1">
+                    {/* PRICING INPUT MATRIX */}
+                    <div className="flex items-center gap-2">
+                      <div className="rounded-lg bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-100/70 px-2 py-1 text-xs font-extrabold text-emerald-700 shadow-sm">
+                        ₹{sellPrice}
+                      </div>
 
-                    {/* TRACK / STOP */}
-                    {!isTracking ? (
+                      <div className="flex items-center gap-1">
+                        <div className="relative flex items-center">
+                          <input
+                            type="number"
+                            step="0.1"
+                            value={sellPercentage}
+                            onChange={(e) =>
+                              setSellPercentages((prev) => ({
+                                ...prev,
+                                [order.order_id]: Number(e.target.value),
+                              }))
+                            }
+                            className="w-16 rounded-md border border-slate-200 bg-slate-50/50 py-0.5 pr-2.5 text-center text-[10px] font-bold text-slate-700 transition-all outline-none hover:border-slate-300 focus:border-indigo-500 focus:bg-white focus:ring-1 focus:ring-indigo-500/20"
+                          />
+                          <span className="absolute right-1 text-[8px] font-bold text-slate-400 pointer-events-none">
+                            %
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* INTERACTIVE BUTTON HUB */}
+                    <div className="flex items-center gap-1.5">
+                      {/* SELL */}
                       <button
                         type="button"
-                        onClick={() => {
-                          setTrackingOrders((prev) => ({
-                            ...prev,
-                            [order.order_id]: true,
-                          }));
-                          onTrackOrder(order.tableUser, order.order_id,sellPrice);
-                        }}
-                        className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-indigo-600 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-indigo-700"
+                        title="Sell Order"
+                        onClick={() => onSellOrder(order, sellPrice)}
+                        className="rounded-lg bg-emerald-50 border border-emerald-100 p-1.5 text-emerald-700 shadow-sm transition-all hover:bg-emerald-600 hover:text-white hover:border-emerald-600 active:scale-95"
                       >
-                        <Brain size={13} />
-                        Track
+                        <TrendingDown size={11} className="stroke-[2.5]" />
                       </button>
-                    ) : (
+
+                      {/* TRACK TOGGLE */}
+                      {!isTracking ? (
+                        <button
+                          type="button"
+                          title="Start Auto Tracking"
+                          onClick={() => {
+                            setTrackingOrders((prev) => ({
+                              ...prev,
+                              [order.order_id]: true,
+                            }));
+                            onTrackOrder(order.tableUser, order.order_id, sellPrice);
+                          }}
+                          className="rounded-lg bg-indigo-50 border border-indigo-100 p-1.5 text-indigo-600 shadow-sm transition-all hover:bg-indigo-600 hover:text-white hover:border-indigo-600 active:scale-95"
+                        >
+                          <Brain size={11} className="stroke-[2.5]" />
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          title="Stop Tracking"
+                          onClick={() => {
+                            setTrackingOrders((prev) => ({
+                              ...prev,
+                              [order.order_id]: false,
+                            }));
+                            onStopTrackOrder(order.tableUser, order.order_id);
+                          }}
+                          className="rounded-lg bg-rose-50 border border-rose-100 p-1.5 text-rose-600 shadow-sm transition-all hover:bg-rose-600 hover:text-white hover:border-rose-600 active:scale-95 animate-pulse"
+                        >
+                          <Square size={10} className="fill-current stroke-[2.5]" />
+                        </button>
+                      )}
+
+                      {/* CANCEL */}
                       <button
                         type="button"
-                        onClick={() => {
-                          setTrackingOrders((prev) => ({
-                            ...prev,
-                            [order.order_id]: false,
-                          }));
-                          onStopTrackOrder(order.tableUser, order.order_id);
-                        }}
-                        className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-rose-600 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-rose-700"
+                        title="Cancel Order"
+                        onClick={() => onCancelOrder(order.tableUser, order.order_id)}
+                        className="rounded-lg border border-slate-200 bg-white p-1.5 text-slate-400 shadow-sm transition-all hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600 active:scale-95"
                       >
-                        <Square size={12} />
-                        Stop
+                        <Trash2 size={11} className="stroke-[2.5]" />
                       </button>
-                    )}
-
-                    {/* CANCEL */}
-                    <button
-                      type="button"
-                      onClick={() => onCancelOrder(order.tableUser, order.order_id)}
-                      aria-label="Cancel order"
-                      className="rounded-xl border border-slate-200 bg-white p-2 text-slate-400 transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600"
-                    >
-                      <Trash2 size={15} />
-                    </button>
+                    </div>
                   </div>
                 </div>
               );
