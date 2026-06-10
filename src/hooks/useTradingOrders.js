@@ -453,7 +453,7 @@ export function useTradingOrders() {
     try {
 
       await fetch(
-        `${url}stop-track?order_id=${orderId}`,
+        `${url}/stop-track?order_id=${orderId}`,
         {
           method: "POST",
         }
