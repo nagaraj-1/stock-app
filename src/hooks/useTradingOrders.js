@@ -336,7 +336,7 @@ export function useTradingOrders() {
               const sellOrderCheck = orderList.find(
                 (o) => o.tableUser === aiUser && o.transaction_type == "SELL" && o.status?.toUpperCase() === "TRIGGER PENDING"
               );
-              
+
               if (sellOrderCheck)
                 continue;
 
@@ -494,10 +494,19 @@ export function useTradingOrders() {
 
   // EXECUTE ORDER
   const executeOrder = async () => {
+    const url = API_CONFIG[user];
+
     try {
+      await fetch(
+        `${url}/add-skip-stock?symbol=${symbol}`,
+        {
+          method: "POST",
+        }
+      );
+
       setIsLoadingStock(true);
 
-      const url = API_CONFIG[user];
+
 
       const response = await fetch(
         `${url}/buy?symbol=${symbol}&qty=${targetQty}&trigger_price=${targetPrice}`,
