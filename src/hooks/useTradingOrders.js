@@ -109,18 +109,34 @@ export function useTradingOrders() {
       : calculatedTargetQty;
 
   // SAVE SETTINGS
-  const saveSettings = () => {
-    localStorage.setItem(
-      STORAGE_KEYS.cInvestment,
-      cInvestment
-    );
+  const saveSettings = async () => {
+    try {
+      const response = await fetch(
+        `${API_CONFIG.NAG}/save-investment?nInvestment=${nInvestment}&cInvestment=${cInvestment}`,
+        {
+          method: "POST",
+        }
+      );
 
-    localStorage.setItem(
-      STORAGE_KEYS.nInvestment,
-      nInvestment
-    );
+      const result = await response.json();
 
-    setShowSettings(false);
+      console.log(result);
+
+      localStorage.setItem(
+        STORAGE_KEYS.nInvestment,
+        nInvestment
+      );
+
+      localStorage.setItem(
+        STORAGE_KEYS.cInvestment,
+        cInvestment
+      );
+
+      setShowSettings(false);
+
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   // SELECT STOCK
@@ -128,18 +144,8 @@ export function useTradingOrders() {
     setIsLoadingStock(true);
 
     try {
-      const response = await fetch(
-        `${API_CONFIG.NAG}/symbol-search?q=${stock.stock}`
-      );
 
-      const data = await response.json();
-
-
-
-      if (data.data.length > 0)
-        setSymbol(data.data[0].symbol);
-      else
-        setSymbol("")
+      setSymbol(stock.stock)
       setPrice(
         Number(stock.currentPrice) || 0
       );
@@ -160,6 +166,26 @@ export function useTradingOrders() {
       setIsLoadingStock(false);
     }
   };
+
+  useEffect(() => {
+    const handleWheel = (e) => {
+      if (e.ctrlKey) {
+        e.preventDefault();
+      }
+    };
+
+    document.addEventListener("wheel", handleWheel, {
+      passive: false,
+    });
+
+    return () => {
+      document.removeEventListener(
+        "wheel",
+        handleWheel
+      );
+    };
+  }, []);
+
 
   // FETCH ORDERS
   const fetchOrders = async () => {
@@ -200,11 +226,22 @@ export function useTradingOrders() {
       const merged = [
         ...nagOrders,
         ...cutieOrders,
-      ].sort(
-        (a, b) =>
+      ].sort((a, b) => {
+        const aPending =
+          a.status?.toUpperCase() === "TRIGGER PENDING";
+        const bPending =
+          b.status?.toUpperCase() === "TRIGGER PENDING";
+
+        // Trigger Pending orders first
+        if (aPending && !bPending) return -1;
+        if (!aPending && bPending) return 1;
+
+        // Then sort by latest date
+        return (
           new Date(b.order_timestamp) -
           new Date(a.order_timestamp)
-      );
+        );
+      });
 
       console.log("MERGED:", merged);
 
@@ -218,198 +255,60 @@ export function useTradingOrders() {
     }
   };
 
-  const handlePendingOrderPopup = (stockSymbol, pendingOrder) => {
-    return new Promise((resolve) => {
-      let handled = false;
 
-      // AUTO ACTION AFTER 10 SEC
-      const timer = setTimeout(async () => {
-        if (handled) return;
-        handled = true;
-
-        console.log("No response -> Auto cancel order");
-
-        await calcelOrders(
-          pendingOrder.tableUser,
-          pendingOrder.order_id
-        );
-
-        setPendingPopup(null);
-
-        resolve("continue");
-      }, 10000);
-
-      setPendingPopup({
-        stockSymbol,
-
-        onSkip: () => {
-          if (handled) return;
-          handled = true;
-
-          clearTimeout(timer);
-
-          setPendingPopup(null);
-
-          if (pendingOrder.tableUser === "NAG")
-            setIsNagAiActive(false);
-          else
-            setIsCutieAiActive(false);
-
-
-          resolve("skip");
-        },
-
-        onContinue: async () => {
-          if (handled) return;
-          handled = true;
-
-          clearTimeout(timer);
-
-          await calcelOrders(
-            pendingOrder.tableUser,
-            pendingOrder.order_id
-          );
-
-          setPendingPopup(null);
-
-          resolve("continue");
-        },
-      });
-    });
-  };
 
   // LOAD ON START
   useEffect(() => {
     fetchOrders();
+    loadInvestmentSettings();
   }, []);
 
-  useEffect(() => {
-    let interval;
+  const loadInvestmentSettings = async () => {
+    try {
+      const nagRes = await fetch(
+        `${API_CONFIG.NAG}/load-investment`
+      );
 
-    if (isNagAiActive || isCutieAiActive) {
+      const nagJson = await nagRes.json();
 
-      const runAiLogic = async () => {
-        try {
+      localStorage.setItem(
+        STORAGE_KEYS.nInvestment,
+        nagJson["N-I"]
+      );
 
-          const aiUser = isNagAiActive ? "NAG" : "CUTIE";
-
-          console.log("Running AI Logic...");
-
-          const res = await fetch(`${API_CONFIG.NAG}/stocks`);
-          let scannerData = await res.json();
-          console.log("scannerDatascannerDatascannerData ", scannerData)
-          scannerData = scannerData = scannerData?.data[0]?.data.sort(
-            (b, a) => Number(a.percentage) - Number(b.percentage)
-          );
-          console.log("SCANNER DATA:", scannerData);
-          if (!scannerData) return;
-
-          const orderList = await fetchOrders();
-
-          let hasTriggeredOrder = false;
-
-          for (const stock of scannerData) {
-
-
-
-            if (Number(stock.percentage) > 14.5 && Number(stock.percentage) < 15.30) {
-              if (hasTriggeredOrder) break;
-              hasTriggeredOrder = true;
-
-              console.log(`Evaluating ${stock}: ${stock.percentage}%`);
-
-              const response = await fetch(
-                `${API_CONFIG.NAG}/symbol-search?q=${stock.stock}`
-              );
-
-              const data = await response.json();
-              let stockSymbol
-              if (data.data.length > 0)
-                stockSymbol = data.data[0].symbol;
-
-              const isExecuted = orderList.some(
-                (o) => o.tableUser === aiUser && o.tradingsymbol === stockSymbol
-                  && o.status?.toUpperCase() === "COMPLETE"
-              );
-
-
-              const sellOrderCheck = orderList.find(
-                (o) => o.tableUser === aiUser && o.transaction_type == "SELL" && o.status?.toUpperCase() === "TRIGGER PENDING"
-              );
-
-              if (sellOrderCheck)
-                continue;
-
-
-
-
-              if (!isExecuted) {
-                const pendingOrder = orderList.find(
-                  (o) => o.tableUser === aiUser && o.status?.toUpperCase() === "TRIGGER PENDING"
-                );
-                console.log("PENDING ORDER:", pendingOrder);
-                if (pendingOrder) {
-
-                  if (pendingOrder.tradingsymbol === stockSymbol) {
-                    console.log("SAME pending order exists, skipping popup.");
-                    continue;
-                  }
-
-                  const action = await handlePendingOrderPopup(
-                    stockSymbol,
-                    pendingOrder
-                  );
-
-                  if (action === "skip") {
-                    if (aiUser === "NAG")
-                      setIsNagAiActive(false);
-                    else
-                      setIsCutieAiActive(false);
-                    return;
-                  }
-                }
-
-                const sPrice = Number(stock.currentPrice) || 0;
-                const sPercent = Number(stock.percentage) || 0;
-                const calcTargetPrice = Math.round(((sPrice / (1 + sPercent / 100)) * (1 + targetPercent / 100)) * 100) / 100;
-
-                const buyPercentage = targetPercent;
-                const sellPercentage = 16.5;
-                const sellPrice = (
-                  (price / (1 + buyPercentage / 100)) *
-                  (1 + sellPercentage / 100)
-                ).toFixed(2);
-
-                console.log(calcTargetPrice);
-                const investment = aiUser === "CUTIE" ? Number(cInvestment) : Number(nInvestment);
-                const calcQty = Math.floor(investment / (calcTargetPrice / 5)) || 0;
-
-                // Place new order
-                const buyUrl = API_CONFIG[aiUser];
-                const response = await fetch(
-                  `${buyUrl}/buy?symbol=${stockSymbol}&qty=${calcQty}&trigger_price=${calcTargetPrice}`,
-                  {
-                    method: "POST",
-                  }
-                );
-
-                const data = await response.json();
-
-                console.log("BUY RESPONSE:", data);
-                await fetchOrders();
-                aiModeOrderTrack(aiUser, data.order_id, calcTargetPrice);
-              }
-            }
-          }
-        } catch (error) {
-          console.error("AI Mode Error:", error);
-        }
-      };
-
-      interval = setInterval(runAiLogic, 20000);
+      localStorage.setItem(
+        STORAGE_KEYS.cInvestment,
+        nagJson["C-I"]
+      );
+      setIsCutieAiActive(nagJson["C-Mode"] === "ON");
+      setIsNagAiActive(nagJson["N-Mode"] === "ON");
+    } catch (error) {
+      console.error("Failed to load investment settings:", error);
     }
-    return () => clearInterval(interval);
-  }, [isNagAiActive, isCutieAiActive, targetPercent, user, cInvestment, nInvestment]);
+  };
+
+  const setIsNagAiActiveMode = (isActive) => {
+    setIsNagAiActive(isActive);
+    const url = API_CONFIG["NAG"];
+    fetch(
+      `${url}/ai-mode-enable?user=N&mode=${isActive ? "ON" : "OFF"}`,
+      {
+        method: "POST",
+      }
+    );
+  }
+
+  const setIsCutieAiActiveMode = (isActive) => {
+    setIsCutieAiActive(isActive);
+    const url = API_CONFIG["CUTIE"];
+    fetch(
+      `${url}/ai-mode-enable?user=C&mode=${isActive ? "ON" : "OFF"}`,
+      {
+        method: "POST",
+      }
+    );
+  }
+
 
   const aiModeOrderTrack = async (
     user1,
@@ -497,12 +396,7 @@ export function useTradingOrders() {
     const url = API_CONFIG[user];
 
     try {
-      await fetch(
-        `${url}/add-skip-stock?symbol=${symbol}`,
-        {
-          method: "POST",
-        }
-      );
+     
 
       setIsLoadingStock(true);
 
@@ -602,8 +496,8 @@ export function useTradingOrders() {
       aiModeOrderTrack,
       stopTracking,
       sellOrder,
-      setIsNagAiActive,
-      setIsCutieAiActive,
+      setIsNagAiActiveMode,
+      setIsCutieAiActiveMode,
       // MANUAL EDITS
       setManualTargetPrice,
       setManualTargetQty,

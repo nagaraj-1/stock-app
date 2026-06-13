@@ -9,9 +9,9 @@ import {
 } from "lucide-react";
 
 const inputClass =
-  "h-10 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3 text-xs font-bold text-slate-800 transition-all duration-300 placeholder:text-slate-400/80 hover:border-slate-300 hover:bg-white focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10 outline-none shadow-sm";
+  "h-10 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-2 text-[11px] sm:text-xs font-bold text-slate-800 transition-all duration-300 placeholder:text-slate-400/80 hover:border-slate-300 hover:bg-white focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 outline-none shadow-sm text-center sm:text-left";
 
-const selectClass = `${inputClass} appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22292.4%22 height=%22292.4%22%3E%3Cpath fill=%22%23475569%22 d=%22M287 69.4a17.6 17.6 0 0 0-13-5.4H18.4c-5 0-9.3 1.8-12.9 5.4A17.6 17.6 0 0 0 0 82.2c0 5 1.8 9.3 5.4 12.9l128 127.9c3.6 3.6 7.8 5.4 12.8 5.4s9.2-1.8 12.8-5.4L287 95c3.5-3.5 5.4-7.8 5.4-12.8 0-5-1.9-9.2-5.5-12.8z%22/%3E%3C/svg%3E')] bg-[length:0.55rem_auto] bg-[right_0.75rem_center] bg-no-repeat pr-8 cursor-pointer`;
+const selectClass = `${inputClass} appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22292.4%22 height=%22292.4%22%3E%3Cpath fill=%22%23475569%22 d=%22M287 69.4a17.6 17.6 0 0 0-13-5.4H18.4c-5 0-9.3 1.8-12.9 5.4A17.6 17.6 0 0 0 0 82.2c0 5 1.8 9.3 5.4 12.9l128 127.9c3.6 3.6 7.8 5.4 12.8 5.4s9.2-1.8 12.8-5.4L287 95c3.5-3.5 5.4-7.8 5.4-12.8 0-5-1.9-9.2-5.5-12.8z%22/%3E%3C/svg%3E')] bg-[length:0.55rem_auto] bg-[right_0.4rem_center] bg-no-repeat sm:pr-8 cursor-pointer !px-1`;
 
 function FormField({ label, icon, children, className = "" }) {
   return (
@@ -33,270 +33,164 @@ export default function OrderFormModern({
   const handleFocus = (e) => e.target.select();
 
   return (
-    <section className="w-full rounded-2xl bg-white border border-slate-100 p-3 sm:p-4 shadow-sm transition-all duration-200 hover:shadow-md">
+    <section className="w-full rounded-2xl bg-white border border-slate-100 p-2 sm:p-4 shadow-sm transition-all duration-200 hover:shadow-md">
 
-      {/* ================= MOBILE VIEW ================= */}
-      <div className="grid grid-cols-4 gap-2 sm:hidden">
+      {/* ================= ULTRA COMPACT 2-LINE MOBILE VIEW ================= */}
+      <div className="grid grid-cols-4 gap-1.5 sm:hidden">
 
-        {/* SYMBOL */}
-        <FormField
-          label="Symbol"
-          icon={<TrendingUp size={10} />}
-          className="col-span-2"
+        {/* --- LINE 1 --- */}
+        <input
+          type="text"
+          placeholder="SYM"
+          value={fields.symbol}
+          onChange={(e) => actions.setSymbol(e.target.value.toUpperCase())}
+          onFocus={handleFocus}
+          className={`${inputClass} uppercase font-black text-indigo-700`}
+        />
+
+        <input
+          type="number"
+          placeholder="Price"
+          value={fields.price}
+          onChange={(e) => actions.setPrice(Number(e.target.value))}
+          onFocus={handleFocus}
+          className={inputClass}
+        />
+
+        <input
+          type="number"
+          placeholder="Top%"
+          value={fields.topPercent}
+          onChange={(e) => actions.setTopPercent(Number(e.target.value))}
+          onFocus={handleFocus}
+          className={inputClass}
+        />
+
+        <select
+          value={fields.user}
+          onChange={(e) => actions.setUser(e.target.value)}
+          className={selectClass}
         >
-          <input
-            type="text"
-            placeholder="RELIANCE"
-            value={fields.symbol}
-            onChange={(e) =>
-              actions.setSymbol(e.target.value.toUpperCase())
-            }
-            onFocus={handleFocus}
-            className={`${inputClass} h-9 px-2.5 text-[11px] uppercase rounded-lg font-black tracking-wide`}
-          />
-        </FormField>
+          <option value="NAG">NAG</option>
+          <option value="CUTIE">CUTIE</option>
+        </select>
 
-        {/* PRICE */}
-        <FormField
-          label="Price"
-          icon={<IndianRupee size={10} />}
+        {/* --- LINE 2 --- */}
+        <input
+          type="number"
+          placeholder="Tgt%"
+          value={fields.targetPercent}
+          onChange={(e) => actions.setTargetPercent(Number(e.target.value))}
+          onFocus={handleFocus}
+          className={inputClass}
+        />
+
+        <input
+          type="number"
+          placeholder={fields.targetPrice || "Tgt ₹"}
+          value={fields.manualTargetPrice}
+          onChange={(e) => actions.setManualTargetPrice(e.target.value)}
+          onFocus={handleFocus}
+          className={`${inputClass} border-emerald-200 bg-emerald-50/50 text-emerald-800 focus:border-emerald-500`}
+        />
+
+        <input
+          type="number"
+          placeholder={fields.targetQty || "Qty"}
+          value={fields.manualTargetQty}
+          onChange={(e) => actions.setManualTargetQty(e.target.value)}
+          onFocus={handleFocus}
+          className={`${inputClass} border-indigo-200 bg-indigo-50/50 text-indigo-800 focus:border-indigo-500`}
+        />
+
+        <button
+          type="button"
+          onClick={onExecuteOrder}
+          className="flex h-10 w-full items-center justify-center gap-1 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-[10px] font-black text-white shadow-md active:scale-95 transition-all"
         >
-          <input
-            type="number"
-            placeholder="0"
-            value={fields.price}
-            onChange={(e) =>
-              actions.setPrice(Number(e.target.value))
-            }
-            onFocus={handleFocus}
-            className={`${inputClass} h-9 px-2.5 text-[11px] rounded-lg tracking-tight`}
-          />
-        </FormField>
+          <Zap size={10} className="fill-current" />
+          EXEC
+        </button>
 
-        {/* TOP % */}
-        <FormField
-          label="Top %"
-          icon={<Percent size={10} />}
-        >
-          <input
-            type="number"
-            placeholder="16"
-            value={fields.topPercent}
-            onChange={(e) =>
-              actions.setTopPercent(Number(e.target.value))
-            }
-            onFocus={handleFocus}
-            className={`${inputClass} h-9 px-2.5 text-[11px] rounded-lg`}
-          />
-        </FormField>
-
-        {/* USER */}
-        <FormField
-          label="User"
-          icon={<User size={10} />}
-        >
-          <select
-            value={fields.user}
-            onChange={(e) =>
-              actions.setUser(e.target.value)
-            }
-            className={`${selectClass} h-9 px-2.5 text-[11px] rounded-lg font-bold`}
-          >
-            <option value="NAG">NAG</option>
-            <option value="CUTIE">CUTIE</option>
-          </select>
-        </FormField>
-
-        {/* TARGET % */}
-        <FormField
-          label="Tgt %"
-          icon={<Percent size={10} />}
-        >
-          <input
-            type="number"
-            placeholder="15"
-            value={fields.targetPercent}
-            onChange={(e) =>
-              actions.setTargetPercent(Number(e.target.value))
-            }
-            onFocus={handleFocus}
-            className={`${inputClass} h-9 px-2.5 text-[11px] rounded-lg`}
-          />
-        </FormField>
-
-        {/* TARGET PRICE */}
-        <FormField
-          label="Target ₹"
-          icon={<IndianRupee size={10} />}
-        >
-          <input
-            type="number"
-            placeholder={fields.targetPrice}
-            value={fields.manualTargetPrice}
-            onChange={(e) =>
-              actions.setManualTargetPrice(e.target.value)
-            }
-            onFocus={handleFocus}
-            className={`${inputClass} h-9 px-2.5 text-[11px] rounded-lg border-emerald-200 bg-emerald-50/50 text-emerald-800 focus:border-emerald-500 focus:ring-emerald-500/10 placeholder:text-emerald-400`}
-          />
-        </FormField>
-
-        {/* QTY */}
-        <FormField
-          label="Qty"
-          icon={<Layers3 size={10} />}
-        >
-          <input
-            type="number"
-            placeholder={fields.targetQty}
-            value={fields.manualTargetQty}
-            onChange={(e) =>
-              actions.setManualTargetQty(e.target.value)
-            }
-            onFocus={handleFocus}
-            className={`${inputClass} h-9 px-2.5 text-[11px] rounded-lg border-indigo-200 bg-indigo-50/50 text-indigo-800 focus:border-indigo-500 focus:ring-indigo-500/10 placeholder:text-indigo-400`}
-          />
-        </FormField>
-
-        {/* EXECUTE MOBILE */}
-        <div className="col-span-4 mt-1">
-          <button
-            type="button"
-            onClick={onExecuteOrder}
-            className="flex h-9 w-full items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-xs font-extrabold text-white shadow-md active:scale-95 transition-all duration-150"
-          >
-            <Zap size={11} className="fill-current" />
-            Execute Order
-          </button>
-        </div>
       </div>
 
-      {/* ================= DESKTOP VIEW ================= */}
+      {/* ================= DESKTOP VIEW (Unchanged) ================= */}
       <div className="hidden grid-cols-2 gap-3.5 sm:grid sm:grid-cols-4 xl:flex xl:flex-row xl:items-end xl:gap-2.5">
 
-        {/* Symbol */}
-        <FormField
-          label="Symbol"
-          icon={<TrendingUp size={11} />}
-          className="xl:flex-[1.4]"
-        >
+        <FormField label="Symbol" icon={<TrendingUp size={11} />} className="xl:flex-[1.4]">
           <input
             type="text"
             placeholder="RELIANCE"
             value={fields.symbol}
-            onChange={(e) =>
-              actions.setSymbol(e.target.value.toUpperCase())
-            }
+            onChange={(e) => actions.setSymbol(e.target.value.toUpperCase())}
             onFocus={handleFocus}
-            className={`${inputClass} uppercase tracking-wide font-black focus:ring-indigo-500/10`}
+            className={`${inputClass} !text-left sm:px-3 uppercase tracking-wide font-black`}
           />
         </FormField>
 
-        {/* Price */}
-        <FormField
-          label="Price"
-          icon={<IndianRupee size={11} />}
-          className="xl:flex-1"
-        >
+        <FormField label="Price" icon={<IndianRupee size={11} />} className="xl:flex-1">
           <input
             type="number"
             placeholder="0.00"
             value={fields.price}
-            onChange={(e) =>
-              actions.setPrice(Number(e.target.value))
-            }
+            onChange={(e) => actions.setPrice(Number(e.target.value))}
             onFocus={handleFocus}
-            className={`${inputClass} tracking-tight`}
+            className={`${inputClass} !text-left sm:px-3 tracking-tight`}
           />
         </FormField>
 
-        {/* Top Percent */}
-        <FormField
-          label="Top %"
-          icon={<Percent size={11} />}
-          className="xl:flex-[0.8]"
-        >
+        <FormField label="Top %" icon={<Percent size={11} />} className="xl:flex-[0.8]">
           <input
             type="number"
             placeholder="16"
             value={fields.topPercent}
-            onChange={(e) =>
-              actions.setTopPercent(Number(e.target.value))
-            }
+            onChange={(e) => actions.setTopPercent(Number(e.target.value))}
             onFocus={handleFocus}
-            className={inputClass}
+            className={`${inputClass} !text-left sm:px-3`}
           />
         </FormField>
 
-        {/* User */}
-        <FormField
-          label="User"
-          icon={<User size={11} />}
-          className="xl:flex-[0.9]"
-        >
+        <FormField label="User" icon={<User size={11} />} className="xl:flex-[0.9]">
           <select
             value={fields.user}
-            onChange={(e) =>
-              actions.setUser(e.target.value)
-            }
-            className={selectClass}
+            onChange={(e) => actions.setUser(e.target.value)}
+            className={`${selectClass} !text-left sm:px-3`}
           >
             <option value="NAG">NAG</option>
             <option value="CUTIE">CUTIE</option>
           </select>
         </FormField>
 
-        {/* Target Percent */}
-        <FormField
-          label="Target %"
-          icon={<Percent size={11} />}
-          className="xl:flex-[0.8]"
-        >
+        <FormField label="Target %" icon={<Percent size={11} />} className="xl:flex-[0.8]">
           <input
             type="number"
             placeholder="15.55"
             value={fields.targetPercent}
-            onChange={(e) =>
-              actions.setTargetPercent(Number(e.target.value))
-            }
+            onChange={(e) => actions.setTargetPercent(Number(e.target.value))}
             onFocus={handleFocus}
-            className={inputClass}
+            className={`${inputClass} !text-left sm:px-3`}
           />
         </FormField>
 
-        {/* Target Price */}
-        <FormField
-          label="Target ₹"
-          icon={<IndianRupee size={11} />}
-          className="xl:flex-1"
-        >
+        <FormField label="Target ₹" icon={<IndianRupee size={11} />} className="xl:flex-1">
           <input
             type="number"
             placeholder={fields.targetPrice}
             value={fields.manualTargetPrice}
-            onChange={(e) =>
-              actions.setManualTargetPrice(e.target.value)
-            }
+            onChange={(e) => actions.setManualTargetPrice(e.target.value)}
             onFocus={handleFocus}
-            className={`${inputClass} border-emerald-200/80 bg-emerald-50/40 text-emerald-800 placeholder:text-emerald-400/90 focus:border-emerald-500 focus:ring-emerald-500/10`}
+            className={`${inputClass} !text-left sm:px-3 border-emerald-200/80 bg-emerald-50/40 text-emerald-800 placeholder:text-emerald-400/90 focus:border-emerald-500`}
           />
         </FormField>
 
-        {/* Qty */}
-        <FormField
-          label="Qty"
-          icon={<Layers3 size={11} />}
-          className="xl:flex-[0.8]"
-        >
+        <FormField label="Qty" icon={<Layers3 size={11} />} className="xl:flex-[0.8]">
           <input
             type="number"
             placeholder={fields.targetQty}
             value={fields.manualTargetQty}
-            onChange={(e) =>
-              actions.setManualTargetQty(e.target.value)
-            }
+            onChange={(e) => actions.setManualTargetQty(e.target.value)}
             onFocus={handleFocus}
-            className={`${inputClass} border-indigo-200/80 bg-indigo-50/40 text-indigo-800 placeholder:text-indigo-400/90 focus:border-indigo-500 focus:ring-indigo-500/10`}
+            className={`${inputClass} !text-left sm:px-3 border-indigo-200/80 bg-indigo-50/40 text-indigo-800 placeholder:text-indigo-400/90 focus:border-indigo-500`}
           />
         </FormField>
 

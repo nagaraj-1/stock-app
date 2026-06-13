@@ -80,7 +80,7 @@ export default function OrdersView({
   const [sellPercentages, setSellPercentages] = useState({});
 
   return (
-    <section className="flex h-[250px] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-200 hover:shadow-md">
+    <section className="flex h-[250px] md:h-[38vh] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-200 hover:shadow-md">
       {/* EMPTY STATE */}
       {orders.length === 0 ? (
         <div className="flex h-full flex-col items-center justify-center gap-3 text-slate-400 bg-slate-50/30">

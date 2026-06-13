@@ -77,7 +77,7 @@ export default function LiveResponse({ user = "ALL" }) {
   };
 
   return (
-    <div className="flex flex-col h-[350px] w-full rounded-2xl border border-slate-800 bg-slate-950 shadow-2xl overflow-hidden font-mono text-xs selection:bg-indigo-500/30">
+    <div className="flex flex-col  h-[160px] md:h-[50vh] w-full rounded-2xl border border-slate-800 bg-slate-950 shadow-2xl overflow-hidden font-mono text-xs selection:bg-indigo-500/30">
 
       {/* Terminal Header */}
       <div className="flex items-center justify-between bg-slate-900 px-4 py-2.5 border-b border-slate-800">
