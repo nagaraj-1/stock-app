@@ -300,7 +300,7 @@ export function useTradingOrders() {
 
   const setIsCutieAiActiveMode = (isActive) => {
     setIsCutieAiActive(isActive);
-    const url = API_CONFIG["CUTIE"];
+    const url = API_CONFIG["NAG"];
     fetch(
       `${url}/ai-mode-enable?user=C&mode=${isActive ? "ON" : "OFF"}`,
       {
