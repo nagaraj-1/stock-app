@@ -91,7 +91,7 @@ export function useTradingOrders() {
         : Number(nInvestment);
 
     const qty = Math.floor(
-      investment / (targetPrice + (targetPrice * 0.003) / 5)
+      investment / ((targetPrice + (targetPrice * 0.003)) / 5)
     );
 
     return qty || 0;

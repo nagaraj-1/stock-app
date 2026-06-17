@@ -4,6 +4,49 @@ const inputClass =
   "h-11 w-full rounded-lg border border-slate-300 px-3 text-base font-semibold outline-none transition focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100";
 
 export default function SettingsModal({ fields, actions }) {
+  const stopNagTrack = async () => {
+    try {
+      const response = await fetch(
+        "https://stock.eatoo.in/api/stop-all-tracks",
+        {
+          method: "GET",
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to stop tracking");
+      }
+
+      const text = await response.text();
+      alert(text || "NAG tracking stopped successfully");
+    } catch (error) {
+      console.error(error);
+      alert("Failed to stop NAG tracking");
+    }
+  };
+
+  const stopCutieTrack = async () => {
+   
+    try {
+      const response = await fetch(
+        "https://stock1.eatoo.in/api/stop-all-tracks",
+        {
+          method: "GET",
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to stop tracking");
+      }
+
+      const text = await response.text();
+      alert(text || "CUTIE tracking stopped successfully");
+    } catch (error) {
+      console.error(error);
+      alert("Failed to stop CUTIE tracking");
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/45 p-4">
       <div className="w-full max-w-sm rounded-xl bg-white shadow-2xl">
@@ -31,6 +74,24 @@ export default function SettingsModal({ fields, actions }) {
               className={inputClass}
             />
           </FormField>
+
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={stopNagTrack}
+              className="h-10 rounded-lg bg-red-600 text-sm font-black uppercase text-white transition hover:bg-red-700"
+            >
+              Stop NAG Track
+            </button>
+
+            <button
+              type="button"
+              onClick={stopCutieTrack}
+              className="h-10 rounded-lg bg-orange-600 text-sm font-black uppercase text-white transition hover:bg-orange-700"
+            >
+              Stop CUTIE Track
+            </button>
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-3 border-t border-slate-200 px-5 py-4">
@@ -41,6 +102,7 @@ export default function SettingsModal({ fields, actions }) {
           >
             Cancel
           </button>
+
           <button
             type="button"
             onClick={actions.saveSettings}
