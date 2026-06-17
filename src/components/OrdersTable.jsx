@@ -111,7 +111,7 @@ export default function OrdersView({
 
               const isTracking = trackingOrders[order.order_id];
               const buyPercentage = 15.55;
-              const sellPercentage = sellPercentages[order.order_id] ?? 16.4;
+              const sellPercentage = sellPercentages[order.order_id] ?? 16.8;
 
               const sellPrice = (
                 (price / (1 + buyPercentage / 100)) *
