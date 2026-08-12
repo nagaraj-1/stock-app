@@ -1,4 +1,3 @@
-import React from "react";
 import {
   TrendingUp,
   User,
@@ -9,7 +8,7 @@ import {
 } from "lucide-react";
 
 const inputClass =
-  "h-10 w-full rounded-xl border border-slate-200 bg-slate-50/50 px-2 text-[11px] sm:text-xs font-bold text-slate-800 transition-all duration-300 placeholder:text-slate-400/80 hover:border-slate-300 hover:bg-white focus:border-indigo-500 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 outline-none shadow-sm text-center sm:text-left";
+  "h-10 w-full rounded-xl border border-violet-100 bg-white/70 px-2 text-[11px] sm:text-xs font-bold text-slate-800 transition-all duration-300 placeholder:text-slate-400/80 hover:border-violet-300 hover:bg-white focus:border-fuchsia-500 focus:bg-white focus:ring-2 focus:ring-fuchsia-500/20 outline-none shadow-sm text-center sm:text-left";
 
 const selectClass = `${inputClass} appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22292.4%22 height=%22292.4%22%3E%3Cpath fill=%22%23475569%22 d=%22M287 69.4a17.6 17.6 0 0 0-13-5.4H18.4c-5 0-9.3 1.8-12.9 5.4A17.6 17.6 0 0 0 0 82.2c0 5 1.8 9.3 5.4 12.9l128 127.9c3.6 3.6 7.8 5.4 12.8 5.4s9.2-1.8 12.8-5.4L287 95c3.5-3.5 5.4-7.8 5.4-12.8 0-5-1.9-9.2-5.5-12.8z%22/%3E%3C/svg%3E')] bg-[length:0.55rem_auto] bg-[right_0.4rem_center] bg-no-repeat sm:pr-8 cursor-pointer !px-1`;
 
@@ -33,7 +32,13 @@ export default function OrderFormModern({
   const handleFocus = (e) => e.target.select();
 
   return (
-    <section className="w-full rounded-2xl bg-white border border-slate-100 p-2 sm:p-4 shadow-sm transition-all duration-200 hover:shadow-md">
+    <section className="relative w-full overflow-hidden rounded-2xl border border-violet-200/70 bg-gradient-to-r from-violet-50/95 via-white/95 to-cyan-50/95 p-2.5 shadow-[0_12px_35px_rgba(109,40,217,0.10)] backdrop-blur sm:p-4">
+      <div className="pointer-events-none absolute -right-8 -top-12 h-32 w-32 rounded-full bg-fuchsia-300/25 blur-2xl" />
+
+      <div className="mb-3 hidden items-center justify-between sm:flex">
+        <div><p className="text-[9px] font-extrabold uppercase tracking-[0.2em] text-fuchsia-500">Quick order</p><h2 className="mt-0.5 text-sm font-black tracking-tight text-slate-900">Build your position</h2></div>
+        <span className="rounded-full border border-cyan-200 bg-cyan-50 px-2 py-1 text-[9px] font-bold text-cyan-700">NSE · INTRADAY</span>
+      </div>
 
       {/* ================= ULTRA COMPACT 2-LINE MOBILE VIEW ================= */}
       <div className="grid grid-cols-4 gap-1.5 sm:hidden">
@@ -106,7 +111,7 @@ export default function OrderFormModern({
         <button
           type="button"
           onClick={onExecuteOrder}
-          className="flex h-10 w-full items-center justify-center gap-1 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-[10px] font-black text-white shadow-md active:scale-95 transition-all"
+          className="flex h-10 w-full items-center justify-center gap-1 rounded-xl bg-gradient-to-r from-violet-600 via-fuchsia-500 to-orange-400 text-[10px] font-black text-white shadow-md shadow-fuchsia-500/25 active:scale-95 transition-all"
         >
           <Zap size={10} className="fill-current" />
           EXEC
@@ -199,7 +204,7 @@ export default function OrderFormModern({
           <button
             type="button"
             onClick={onExecuteOrder}
-            className="group relative flex h-10 w-full items-center justify-center gap-1.5 overflow-hidden rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-4 text-xs font-black tracking-wider text-white shadow-[0_4px_12px_rgba(79,70,229,0.3)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(79,70,229,0.4)] active:scale-95"
+            className="group relative flex h-10 w-full items-center justify-center gap-1.5 overflow-hidden rounded-xl bg-gradient-to-r from-violet-600 via-fuchsia-500 to-orange-400 px-4 text-xs font-black tracking-wider text-white shadow-[0_4px_14px_rgba(217,70,239,0.3)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_7px_22px_rgba(217,70,239,0.4)] active:scale-95"
           >
             <Zap size={12} className="fill-current transition-transform duration-300 group-hover:scale-110" />
             <span>EXECUTE ORDER</span>

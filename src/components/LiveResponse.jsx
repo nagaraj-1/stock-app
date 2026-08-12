@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Terminal, ShieldAlert, Radio } from "lucide-react";
 
 export default function LiveResponse({ user = "ALL" }) {
@@ -30,7 +30,7 @@ export default function LiveResponse({ user = "ALL" }) {
       }
     };
 
-    ws.onerror = (error) => {
+    ws.onerror = () => {
       setStatus("error");
       addSystemMessage("ERROR: CONNECTION FAULT DETECTED");
     };
@@ -77,12 +77,12 @@ export default function LiveResponse({ user = "ALL" }) {
   };
 
   return (
-    <div className="flex flex-col  h-[160px] md:h-[50vh] w-full rounded-2xl border border-slate-800 bg-slate-950 shadow-2xl overflow-hidden font-mono text-xs selection:bg-indigo-500/30">
+    <div className={`flex h-[180px] w-full flex-col overflow-hidden rounded-2xl border font-mono text-xs shadow-[0_15px_40px_rgba(15,23,42,0.18)] selection:bg-fuchsia-500/30 md:h-[42vh] ${user === "NAG" ? "border-violet-700/70 bg-[#100b2b]" : "border-fuchsia-700/70 bg-[#25091e]"}`}>
 
       {/* Terminal Header */}
-      <div className="flex items-center justify-between bg-slate-900 px-4 py-2.5 border-b border-slate-800">
+      <div className={`flex items-center justify-between border-b px-4 py-2.5 ${user === "NAG" ? "border-violet-800 bg-gradient-to-r from-violet-950 to-indigo-950" : "border-fuchsia-800 bg-gradient-to-r from-fuchsia-950 to-rose-950"}`}>
         <div className="flex items-center gap-2">
-          <Terminal size={14} className="text-indigo-400" />
+          <Terminal size={14} className={user === "NAG" ? "text-cyan-400" : "text-pink-400"} />
           <h3 className="font-bold tracking-wide text-slate-200 uppercase">
             {user} Console Logs
           </h3>
@@ -107,7 +107,7 @@ export default function LiveResponse({ user = "ALL" }) {
 
             {/* Custom Log Coloring Based on Event Type */}
             {msg.type === "system" ? (
-              <span className="text-indigo-400 font-semibold tracking-wide">
+              <span className={`${user === "NAG" ? "text-cyan-400" : "text-pink-400"} font-semibold tracking-wide`}>
                 {msg.text}
               </span>
             ) : msg.text.toLowerCase().includes("error") || msg.text.toLowerCase().includes("fail") ? (
@@ -129,23 +129,15 @@ export default function LiveResponse({ user = "ALL" }) {
 
 
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between border-t border-slate-800 bg-slate-900/80 px-3 py-2">
         <button
           onClick={clearLogs}
-          className="px-2 py-1 text-[10px] rounded bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500/20 transition"
+          className="rounded-md border border-slate-700 bg-slate-800 px-2 py-1 text-[9px] font-bold text-slate-400 transition hover:border-rose-500/30 hover:bg-rose-500/10 hover:text-rose-400"
         >
           CLEAR
         </button>
 
-        <div
-          className={`flex items-center gap-1.5 px-2 py-0.5 rounded-md border text-[10px] font-bold ${statusConfig[status].bg} ${statusConfig[status].text} ${statusConfig[status].border}`}
-        >
-          <Radio
-            size={10}
-            className={status === "connected" ? "animate-pulse" : ""}
-          />
-          {statusConfig[status].label}
-        </div>
+        <span className="text-[9px] font-medium text-slate-600">Newest events appear first</span>
       </div>
     </div>
   );

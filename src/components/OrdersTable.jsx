@@ -80,19 +80,19 @@ export default function OrdersView({
   const [sellPercentages, setSellPercentages] = useState({});
 
   return (
-    <section className="flex h-[250px] md:h-[38vh] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-200 hover:shadow-md">
+    <section className="flex h-[250px] md:h-[38vh] flex-col overflow-hidden rounded-2xl border border-fuchsia-200/70 bg-white/90 shadow-[0_10px_30px_rgba(217,70,239,0.09)] transition-all duration-200 hover:shadow-[0_14px_36px_rgba(217,70,239,0.14)]">
       {/* EMPTY STATE */}
       {orders.length === 0 ? (
-        <div className="flex h-full flex-col items-center justify-center gap-3 text-slate-400 bg-slate-50/30">
-          <div className="rounded-full bg-slate-100 p-2 text-slate-400/80">
+        <div className="flex h-full flex-col items-center justify-center gap-3 bg-gradient-to-br from-violet-50 via-fuchsia-50/70 to-orange-50 text-fuchsia-500">
+          <div className="rounded-full bg-white p-3 text-fuchsia-500 shadow-lg shadow-fuchsia-200/50">
             <Layers3 size={20} />
           </div>
-          <p className="text-xs font-semibold tracking-wide text-slate-400 uppercase">
+          <p className="text-xs font-semibold uppercase tracking-wide text-fuchsia-500">
             No Active Orders
           </p>
         </div>
       ) : (
-        <div className="flex-1 overflow-y-auto bg-slate-50/40 p-3 scrollbar-thin">
+        <div className="flex-1 overflow-y-auto bg-gradient-to-br from-violet-50/60 via-white to-fuchsia-50/50 p-3 scrollbar-thin">
           <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
             {orders.map((order, index) => {
               const price =

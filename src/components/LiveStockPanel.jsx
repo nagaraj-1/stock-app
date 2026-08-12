@@ -44,9 +44,9 @@ export default function LiveStockPanel({ onSelectStock }) {
   }, []);
 
   return (
-    <div className="flex h-[140px] md:h-[38vh] w-full flex-col overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-sm transition-all duration-300 hover:shadow-md">
+    <div className="flex h-[140px] md:h-[38vh] w-full flex-col overflow-hidden rounded-2xl border border-emerald-200/80 bg-white/90 shadow-[0_10px_30px_rgba(16,185,129,0.10)] transition-all duration-300 hover:shadow-[0_14px_36px_rgba(16,185,129,0.16)]">
       {/* HEADER WITH SUBTLE GRADIENT */}
-      <div className="flex items-center justify-between border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white px-3 py-2 z-10 shadow-[0_2px_4px_-2px_rgba(0,0,0,0.02)]">
+      <div className="z-10 flex items-center justify-between border-b border-emerald-100 bg-gradient-to-r from-emerald-50 via-cyan-50 to-sky-50 px-3 py-2 shadow-sm">
         <div className="flex items-center gap-2">
           <span className="relative flex h-2 w-2">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
@@ -103,7 +103,7 @@ export default function LiveStockPanel({ onSelectStock }) {
                 <div
                   key={stock.stock}
                   onClick={() => onSelectStock?.(stock)}
-                  className={`group relative flex cursor-pointer items-center gap-1.5 border-b border-r border-slate-100 bg-white px-2 py-1.5 transition-all duration-200 hover:bg-slate-50 hover:shadow-[inset_0_0_12px_rgba(0,0,0,0.02)]`}
+            className={`group relative flex cursor-pointer items-center gap-1.5 border-b border-r border-emerald-100/60 bg-white/80 px-2 py-1.5 transition-all duration-200 hover:bg-gradient-to-r hover:from-emerald-50 hover:to-cyan-50 hover:shadow-[inset_0_0_12px_rgba(16,185,129,0.04)]`}
                 >
                   {/* LEFT ACCENT LINE */}
                   <div

@@ -48,9 +48,9 @@ export default function SettingsModal({ fields, actions }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/45 p-4">
-      <div className="w-full max-w-sm rounded-xl bg-white shadow-2xl">
-        <div className="border-b border-slate-200 px-5 py-4">
+    <div className="fixed inset-0 z-50 grid place-items-center bg-violet-950/45 p-4 backdrop-blur-sm">
+      <div className="w-full max-w-sm overflow-hidden rounded-2xl border border-violet-200 bg-white shadow-2xl shadow-violet-950/25">
+        <div className="border-b border-violet-100 bg-gradient-to-r from-violet-100 via-fuchsia-50 to-orange-50 px-5 py-4">
           <h2 className="text-xl font-black text-slate-950">
             Investment Settings
           </h2>
@@ -106,7 +106,7 @@ export default function SettingsModal({ fields, actions }) {
           <button
             type="button"
             onClick={actions.saveSettings}
-            className="h-10 rounded-lg bg-emerald-600 text-sm font-black uppercase text-white transition hover:bg-emerald-700"
+            className="h-10 rounded-lg bg-gradient-to-r from-violet-600 via-fuchsia-500 to-orange-400 text-sm font-black uppercase text-white shadow-lg shadow-fuchsia-500/20 transition hover:brightness-110"
           >
             Save
           </button>
