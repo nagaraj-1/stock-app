@@ -300,9 +300,9 @@ export function useTradingOrders() {
       );
 
       const loadedTargetPercentage =
-        nagJson.targetPercentage ??
-        nagJson["Target-Percentage"] ??
-        nagJson.target_percentage;
+        nagJson.T-PERCENTAGE ??
+        nagJson["T-PERCENTAGE"] ??
+        nagJson.T-PERCENTAGE;
 
       if (loadedTargetPercentage != null) {
         setTargetPercentage(loadedTargetPercentage);
