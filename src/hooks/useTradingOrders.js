@@ -31,6 +31,13 @@ export function useTradingOrders() {
       ) || DEFAULT_INVESTMENTS.nInvestment
     );
 
+  const [targetPercentage, setTargetPercentage] =
+    useState(
+      localStorage.getItem(
+        STORAGE_KEYS.targetPercentage
+      ) || DEFAULT_INVESTMENTS.targetPercentage
+    );
+
   // ORDER FORM
   const [symbol, setSymbol] = useState(
     DEFAULT_ORDER.symbol
@@ -111,8 +118,14 @@ export function useTradingOrders() {
   // SAVE SETTINGS
   const saveSettings = async () => {
     try {
+      const params = new URLSearchParams({
+        nInvestment,
+        cInvestment,
+        targetPercentage,
+      });
+
       const response = await fetch(
-        `${API_CONFIG.NAG}/save-investment?nInvestment=${nInvestment}&cInvestment=${cInvestment}`,
+        `${API_CONFIG.NAG}/save-investment?${params.toString()}`,
         {
           method: "POST",
         }
@@ -130,6 +143,11 @@ export function useTradingOrders() {
       localStorage.setItem(
         STORAGE_KEYS.cInvestment,
         cInvestment
+      );
+
+      localStorage.setItem(
+        STORAGE_KEYS.targetPercentage,
+        targetPercentage
       );
 
       setShowSettings(false);
@@ -280,6 +298,19 @@ export function useTradingOrders() {
         STORAGE_KEYS.cInvestment,
         nagJson["C-I"]
       );
+
+      const loadedTargetPercentage =
+        nagJson.targetPercentage ??
+        nagJson["Target-Percentage"] ??
+        nagJson.target_percentage;
+
+      if (loadedTargetPercentage != null) {
+        setTargetPercentage(loadedTargetPercentage);
+        localStorage.setItem(
+          STORAGE_KEYS.targetPercentage,
+          loadedTargetPercentage
+        );
+      }
       setIsCutieAiActive(nagJson["C-Mode"] === "ON");
       setIsNagAiActive(nagJson["N-Mode"] === "ON");
     } catch (error) {
@@ -475,6 +506,7 @@ export function useTradingOrders() {
       targetQty,
       cInvestment,
       nInvestment,
+      targetPercentage,
       manualTargetPrice,
       manualTargetQty,
     },
@@ -487,6 +519,7 @@ export function useTradingOrders() {
       setTargetPercent,
       setCInvestment,
       setNInvestment,
+      setTargetPercentage,
       setShowSettings,
       saveSettings,
       selectStock,

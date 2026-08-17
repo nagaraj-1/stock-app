@@ -1,11 +1,13 @@
 export const STORAGE_KEYS = {
   cInvestment: "C_INVESTMENT",
   nInvestment: "N_INVESTMENT",
+  targetPercentage: "TARGET_PERCENTAGE",
 };
 
 export const DEFAULT_INVESTMENTS = {
   cInvestment: 5000,
   nInvestment: 7000,
+  targetPercentage: 15.55,
 };
 
 export const DEFAULT_ORDER = {

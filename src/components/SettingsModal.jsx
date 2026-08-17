@@ -75,6 +75,19 @@ export default function SettingsModal({ fields, actions }) {
             />
           </FormField>
 
+          <FormField label="Target Percentage">
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              value={fields.targetPercentage}
+              onChange={(event) =>
+                actions.setTargetPercentage(event.target.value)
+              }
+              className={inputClass}
+            />
+          </FormField>
+
           <div className="grid grid-cols-2 gap-3">
             <button
               type="button"
