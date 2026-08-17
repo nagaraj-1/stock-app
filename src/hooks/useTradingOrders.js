@@ -31,13 +31,6 @@ export function useTradingOrders() {
       ) || DEFAULT_INVESTMENTS.nInvestment
     );
 
-  const [targetPercentage, setTargetPercentage] =
-    useState(
-      localStorage.getItem(
-        STORAGE_KEYS.targetPercentage
-      ) || DEFAULT_INVESTMENTS.targetPercentage
-    );
-
   // ORDER FORM
   const [symbol, setSymbol] = useState(
     DEFAULT_ORDER.symbol
@@ -55,7 +48,11 @@ export function useTradingOrders() {
   );
 
   const [targetPercent, setTargetPercent] =
-    useState(DEFAULT_ORDER.targetPercent);
+    useState(
+      localStorage.getItem(
+        STORAGE_KEYS.targetPercentage
+      ) || DEFAULT_ORDER.targetPercent
+    );
 
   // ORDERS
   const [orders, setOrders] = useState([]);
@@ -121,7 +118,7 @@ export function useTradingOrders() {
       const params = new URLSearchParams({
         nInvestment,
         cInvestment,
-        targetPercentage,
+        targetPercentage: targetPercent,
       });
 
       const response = await fetch(
@@ -147,7 +144,7 @@ export function useTradingOrders() {
 
       localStorage.setItem(
         STORAGE_KEYS.targetPercentage,
-        targetPercentage
+        targetPercent
       );
 
       setShowSettings(false);
@@ -298,14 +295,11 @@ export function useTradingOrders() {
         STORAGE_KEYS.cInvestment,
         nagJson["C-I"]
       );
-
       const loadedTargetPercentage =
-        nagJson.T-PERCENTAGE ??
-        nagJson["T-PERCENTAGE"] ??
-        nagJson.T-PERCENTAGE;
+        nagJson["T-PERCENTAGE"] ?? DEFAULT_ORDER.targetPercent;
 
       if (loadedTargetPercentage != null) {
-        setTargetPercentage(loadedTargetPercentage);
+        setTargetPercent(loadedTargetPercentage);
         localStorage.setItem(
           STORAGE_KEYS.targetPercentage,
           loadedTargetPercentage
@@ -506,7 +500,6 @@ export function useTradingOrders() {
       targetQty,
       cInvestment,
       nInvestment,
-      targetPercentage,
       manualTargetPrice,
       manualTargetQty,
     },
@@ -519,7 +512,6 @@ export function useTradingOrders() {
       setTargetPercent,
       setCInvestment,
       setNInvestment,
-      setTargetPercentage,
       setShowSettings,
       saveSettings,
       selectStock,

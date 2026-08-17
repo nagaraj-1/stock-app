@@ -80,9 +80,9 @@ export default function SettingsModal({ fields, actions }) {
               type="number"
               min="0"
               step="0.01"
-              value={fields.targetPercentage}
+              value={fields.targetPercent}
               onChange={(event) =>
-                actions.setTargetPercentage(event.target.value)
+                actions.setTargetPercent(event.target.value)
               }
               className={inputClass}
             />
