@@ -68,7 +68,7 @@ export default function App() {
           </div>
 
           <section>
-            <LiveStockPanel onSelectStock={actions.selectStock} />
+            <LiveStockPanel onSelectStock={actions.selectStock} executeOrder={actions.executeOrder} />
           </section>
 
           <section>

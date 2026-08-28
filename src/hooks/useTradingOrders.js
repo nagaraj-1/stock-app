@@ -213,11 +213,19 @@ export function useTradingOrders() {
       const nagJson = await nagRes.json();
 
       // CUTIE
-      const cutieRes = await fetch(
-        `${API_CONFIG.CUTIE}/orders`
-      );
+      let cutieJson = [];
 
-      const cutieJson = await cutieRes.json();
+      try {
+        const cutieRes = await fetch(`${API_CONFIG.CUTIE}/orders`);
+
+        if (cutieRes.ok) {
+          cutieJson = await cutieRes.json();
+        } else {
+          console.warn(`CUTIE /orders failed: ${cutieRes.status}`);
+        }
+      } catch (error) {
+        console.warn("CUTIE /orders unavailable, skipping:", error);
+      }
 
       const nagOrders = Array.isArray(
         nagJson.orders
@@ -238,25 +246,39 @@ export function useTradingOrders() {
         : [];
 
       // MERGE + SORT
-      const merged = [
-        ...nagOrders,
-        ...cutieOrders,
-      ].sort((a, b) => {
-        const aPending =
-          a.status?.toUpperCase() === "TRIGGER PENDING";
-        const bPending =
-          b.status?.toUpperCase() === "TRIGGER PENDING";
+    const merged = [
+  ...nagOrders,
+  ...cutieOrders,
+].sort((a, b) => {
+  const aStatus = a.status?.toUpperCase();
+  const bStatus = b.status?.toUpperCase();
 
-        // Trigger Pending orders first
-        if (aPending && !bPending) return -1;
-        if (!aPending && bPending) return 1;
+  const aPending =
+    aStatus === "TRIGGER PENDING";
 
-        // Then sort by latest date
-        return (
-          new Date(b.order_timestamp) -
-          new Date(a.order_timestamp)
-        );
-      });
+  const bPending =
+    bStatus === "TRIGGER PENDING";
+
+  const aOpen =
+    aStatus === "OPEN";
+
+  const bOpen =
+    bStatus === "OPEN";
+
+  // 1. TRIGGER PENDING first
+  if (aPending && !bPending) return -1;
+  if (!aPending && bPending) return 1;
+
+  // 2. OPEN second
+  if (aOpen && !bOpen) return -1;
+  if (!aOpen && bOpen) return 1;
+
+  // 3. Same priority → latest date first
+  return (
+    new Date(b.order_timestamp) -
+    new Date(a.order_timestamp)
+  );
+});
 
       console.log("MERGED:", merged);
 
@@ -417,15 +439,60 @@ export function useTradingOrders() {
   };
 
   // EXECUTE ORDER
+
   const executeOrder = async () => {
     const url = API_CONFIG[user];
 
     try {
-     
-
       setIsLoadingStock(true);
 
+      // ==========================================
+      // 1. FIND PREVIOUS PENDING ORDER
+      // ==========================================
+      const previousOrder = orders.find(
+        (order) =>
+          order.tableUser === user &&
+          order.status?.toUpperCase() === "TRIGGER PENDING"
+      );
 
+      // ==========================================
+      // 2. CANCEL PREVIOUS ORDER
+      // ==========================================
+      if (previousOrder) {
+        console.log(
+          "Cancelling previous order:",
+          previousOrder.order_id
+        );
+
+        const cancelUrl = API_CONFIG[previousOrder.tableUser];
+
+        const cancelResponse = await fetch(
+          `${cancelUrl}/cancel-order?order_id=${previousOrder.order_id}`,
+          {
+            method: "POST",
+          }
+        );
+
+        const cancelData = await cancelResponse.json();
+
+        console.log("CANCEL RESPONSE:", cancelData);
+
+        // If cancel failed, don't place new order
+        if (!cancelResponse.ok || cancelData.success === false) {
+          console.error("Previous order cancellation failed");
+          return;
+        }
+      }
+
+      // ==========================================
+      // 3. PLACE NEW BUY ORDER
+      // ==========================================
+      console.log("Placing new order:", {
+        user,
+        symbol,
+        qty: targetQty,
+        trigger_price: targetPrice,
+      });
 
       const response = await fetch(
         `${url}/buy?symbol=${symbol}&qty=${targetQty}&trigger_price=${targetPrice}`,
@@ -438,19 +505,21 @@ export function useTradingOrders() {
 
       console.log("BUY RESPONSE:", data);
 
-      // AUTO REFRESH ORDERS
+      // ==========================================
+      // 4. REFRESH ORDERS
+      // ==========================================
       if (data.success) {
-        setIsLoadingStock(false);
-
         await fetchOrders();
       }
+
     } catch (error) {
-      console.error(
-        "BUY API ERROR:",
-        error
-      );
+      console.error("BUY API ERROR:", error);
+    } finally {
+      setIsLoadingStock(false);
     }
   };
+
+
 
   const sellOrder = async (order, sellPrice) => {
     try {
