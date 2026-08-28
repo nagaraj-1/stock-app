@@ -215,17 +215,30 @@ export function useTradingOrders() {
       // CUTIE
       let cutieJson = [];
 
-      try {
-        const cutieRes = await fetch(`${API_CONFIG.CUTIE}/orders`);
 
-        if (cutieRes.ok) {
-          cutieJson = await cutieRes.json();
-        } else {
-          console.warn(`CUTIE /orders failed: ${cutieRes.status}`);
-        }
-      } catch (error) {
-        console.warn("CUTIE /orders unavailable, skipping:", error);
-      }
+try {
+  const controller = new AbortController();
+
+  const timeoutId = setTimeout(() => {
+    controller.abort();
+  }, 500); // 5 seconds
+
+  const cutieRes = await fetch(
+    `${API_CONFIG.CUTIE}/orders`,
+    {
+      signal: controller.signal,
+    }
+  );
+
+  clearTimeout(timeoutId);
+
+  if (cutieRes.ok) {
+    cutieJson = await cutieRes.json();
+  }
+} catch (error) {
+  // Network error / timeout / CUTIE unavailable
+  console.warn("CUTIE unavailable after 5 seconds — skipping");
+}
 
       const nagOrders = Array.isArray(
         nagJson.orders
@@ -246,39 +259,39 @@ export function useTradingOrders() {
         : [];
 
       // MERGE + SORT
-    const merged = [
-  ...nagOrders,
-  ...cutieOrders,
-].sort((a, b) => {
-  const aStatus = a.status?.toUpperCase();
-  const bStatus = b.status?.toUpperCase();
+      const merged = [
+        ...nagOrders,
+        ...cutieOrders,
+      ].sort((a, b) => {
+        const aStatus = a.status?.toUpperCase();
+        const bStatus = b.status?.toUpperCase();
 
-  const aPending =
-    aStatus === "TRIGGER PENDING";
+        const aPending =
+          aStatus === "TRIGGER PENDING";
 
-  const bPending =
-    bStatus === "TRIGGER PENDING";
+        const bPending =
+          bStatus === "TRIGGER PENDING";
 
-  const aOpen =
-    aStatus === "OPEN";
+        const aOpen =
+          aStatus === "OPEN";
 
-  const bOpen =
-    bStatus === "OPEN";
+        const bOpen =
+          bStatus === "OPEN";
 
-  // 1. TRIGGER PENDING first
-  if (aPending && !bPending) return -1;
-  if (!aPending && bPending) return 1;
+        // 1. TRIGGER PENDING first
+        if (aPending && !bPending) return -1;
+        if (!aPending && bPending) return 1;
 
-  // 2. OPEN second
-  if (aOpen && !bOpen) return -1;
-  if (!aOpen && bOpen) return 1;
+        // 2. OPEN second
+        if (aOpen && !bOpen) return -1;
+        if (!aOpen && bOpen) return 1;
 
-  // 3. Same priority → latest date first
-  return (
-    new Date(b.order_timestamp) -
-    new Date(a.order_timestamp)
-  );
-});
+        // 3. Same priority → latest date first
+        return (
+          new Date(b.order_timestamp) -
+          new Date(a.order_timestamp)
+        );
+      });
 
       console.log("MERGED:", merged);
 
