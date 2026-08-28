@@ -112,7 +112,8 @@ export default function OrdersView({
     }
 
     const symbol = order.tradingsymbol;
-
+ 
+    
     try {
       const response = await fetch(
         `${API_CONFIG.STOCK}/anays?symbol=${encodeURIComponent(symbol)}`
