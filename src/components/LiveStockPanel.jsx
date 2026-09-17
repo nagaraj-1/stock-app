@@ -5,7 +5,9 @@ import {
   TrendingUp,
   Zap,
 } from "lucide-react";
+
 import API_CONFIG from "../config/apiConfig";
+
 
 export default function LiveStockPanel({
   onSelectStock,
@@ -22,6 +24,7 @@ export default function LiveStockPanel({
   // Currently executing stock
   const [executingStock, setExecutingStock] =
     useState(null);
+
 
   // ============================================================
   // SKIP STOCK
@@ -57,6 +60,7 @@ export default function LiveStockPanel({
       setSelectedStock((prev) =>
         prev === symbol ? null : prev
       );
+
     } catch (error) {
       console.error(
         "Skip stock error:",
@@ -64,6 +68,7 @@ export default function LiveStockPanel({
       );
     }
   };
+
 
   // ============================================================
   // FETCH STOCKS
@@ -94,14 +99,23 @@ export default function LiveStockPanel({
         ? latestData.data
         : [];
 
-      // Sort highest percentage first
-      const sortedStocks = [...stockData].sort(
-        (a, b) =>
-          Number(b.percentage || 0) -
-          Number(a.percentage || 0)
-      );
 
-      setStocks(sortedStocks);
+      // ========================================================
+      // IMPORTANT
+      //
+      // Backend already gives:
+      //
+      // GROWW first
+      // NSE second
+      //
+      // Do NOT globally sort here.
+      //
+      // Otherwise NSE stocks with higher percentage
+      // could move above Groww stocks.
+      // ========================================================
+
+      setStocks(stockData);
+
 
       // Check selected stock still exists
       setSelectedStock((current) => {
@@ -109,21 +123,24 @@ export default function LiveStockPanel({
           return null;
         }
 
-        const exists = sortedStocks.some(
+        const exists = stockData.some(
           (item) => item.stock === current
         );
 
         return exists ? current : null;
       });
+
     } catch (error) {
       console.error(
         "Fetch stocks error:",
         error
       );
+
     } finally {
       setLoading(false);
     }
   };
+
 
   // ============================================================
   // LOAD + AUTO REFRESH
@@ -141,6 +158,7 @@ export default function LiveStockPanel({
       clearInterval(interval);
     };
   }, []);
+
 
   // ============================================================
   // SELECT STOCK
@@ -169,6 +187,7 @@ export default function LiveStockPanel({
     // Notify parent
     try {
       await onSelectStock?.(stock);
+
     } catch (error) {
       console.error(
         "Select stock error:",
@@ -176,6 +195,7 @@ export default function LiveStockPanel({
       );
     }
   };
+
 
   // ============================================================
   // EXECUTE STOCK
@@ -203,23 +223,60 @@ export default function LiveStockPanel({
       // Execute directly.
       // Stock was already selected.
       await executeOrder?.(stock);
+
     } catch (error) {
       console.error(
         "Execute stock error:",
         error
       );
+
     } finally {
       setExecutingStock(null);
     }
   };
+
+
+  // ============================================================
+  // SOURCE
+  //
+  // GROWW -> G
+  // NSE   -> N
+  // ============================================================
+
+  const getSourceLetter = (source) => {
+    if (!source) {
+      return "";
+    }
+
+    return source
+      .trim()
+      .charAt(0)
+      .toUpperCase();
+  };
+
+
+  const getSourceClass = (source) => {
+    const normalized =
+      String(source || "").toUpperCase();
+
+    if (normalized === "GROWW") {
+      return "bg-emerald-100 text-emerald-700";
+    }
+
+    if (normalized === "NSE") {
+      return "bg-blue-100 text-blue-700";
+    }
+
+    return "bg-slate-100 text-slate-600";
+  };
+
 
   // ============================================================
   // RENDER
   // ============================================================
 
   return (
-    <div className="flex h-[140px] w-full flex-col overflow-hidden rounded-2xl border border-emerald-200/80 bg-white/90 shadow-[0_10px_30px_rgba(16,185,129,0.10)] transition-all duration-300 hover:shadow-[0_14px_36px_rgba(16,185,129,0.16)] md:h-[38vh]">
-
+    <div className="flex h-[230px] w-full flex-col overflow-hidden rounded-2xl border border-emerald-200/80 bg-white/90 shadow-[0_10px_30px_rgba(16,185,129,0.10)] transition-all duration-300 hover:shadow-[0_14px_36px_rgba(16,185,129,0.16)] md:h-[38vh]">
       {/* ======================================================
           HEADER
       ======================================================= */}
@@ -229,15 +286,20 @@ export default function LiveStockPanel({
         {/* TITLE */}
 
         <div className="flex items-center gap-2">
+
           <span className="relative flex h-2 w-2">
+
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
 
             <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+
           </span>
+
 
           <h2 className="text-[11px] font-bold uppercase tracking-widest text-slate-700">
             Live Market
           </h2>
+
 
           {/* Selected stock */}
 
@@ -246,7 +308,9 @@ export default function LiveStockPanel({
               {selectedStock}
             </span>
           )}
+
         </div>
+
 
         {/* REFRESH */}
 
@@ -270,7 +334,9 @@ export default function LiveStockPanel({
             }`}
           />
         </button>
+
       </div>
+
 
       {/* ======================================================
           STOCK LIST
@@ -278,19 +344,24 @@ export default function LiveStockPanel({
 
       <div className="flex-1 overflow-y-auto scroll-smooth bg-slate-50/30">
 
+
         {/* ====================================================
             LOADING
         ===================================================== */}
 
         {loading ? (
-          <div className="grid grid-cols-2">
+
+          <div className="grid grid-cols-1 md:grid-cols-2">
+
             {Array.from({
               length: 8,
             }).map((_, i) => (
+
               <div
                 key={i}
                 className="flex h-9 items-center gap-2 border-b border-r border-slate-100 px-2"
               >
+
                 <div className="h-3 w-12 animate-pulse rounded bg-slate-200" />
 
                 <div className="flex-1" />
@@ -298,28 +369,39 @@ export default function LiveStockPanel({
                 <div className="h-3 w-12 animate-pulse rounded bg-slate-200" />
 
                 <div className="h-4 w-10 animate-pulse rounded-full bg-slate-200" />
+
               </div>
+
             ))}
+
           </div>
+
         ) : stocks.length === 0 ? (
+
           /* ==================================================
              EMPTY
           ================================================== */
 
           <div className="flex h-full flex-col items-center justify-center gap-1 text-[11px] text-slate-400">
+
             <TrendingUp className="h-4 w-4 opacity-50" />
 
             <span>
               No stocks found
             </span>
+
           </div>
+
         ) : (
+
           /* ==================================================
              TWO STOCKS PER ROW
           ================================================== */
 
-          <div className="grid grid-cols-2">
+       <div className="grid grid-cols-1 md:grid-cols-2">
+
             {stocks.map((stock) => {
+
               const percentage =
                 Number(
                   stock.percentage || 0
@@ -341,7 +423,14 @@ export default function LiveStockPanel({
                 executingStock ===
                 stock.stock;
 
+              const sourceLetter =
+                getSourceLetter(
+                  stock.source
+                );
+
+
               return (
+
                 <div
                   key={stock.stock}
                   onClick={(e) =>
@@ -351,7 +440,9 @@ export default function LiveStockPanel({
                     )
                   }
                   className={`
-                    group flex h-9
+                    group
+                    flex
+                    h-9
                     min-w-0
                     cursor-pointer
                     items-center
@@ -361,6 +452,7 @@ export default function LiveStockPanel({
                     px-2
                     transition-all
                     duration-150
+
                     ${
                       isSelected
                         ? "border-emerald-200 bg-emerald-50"
@@ -368,35 +460,73 @@ export default function LiveStockPanel({
                     }
                   `}
                 >
+
+
                   {/* =================================================
-                      STOCK NAME
+                      STOCK NAME + SOURCE
                   ================================================== */}
 
-                  <span
-                    className={`
-                      min-w-0
-                      flex-1
-                      truncate
-                      text-[10px]
-                      font-bold
-                      ${
-                        isSelected
-                          ? "text-emerald-700"
-                          : "text-slate-800"
-                      }
-                    `}
-                    title={stock.stock}
-                  >
-                    {stock.stock}
-                  </span>
+                  <div className="flex min-w-0 flex-1 items-center gap-1">
+
+                    <span
+                      className={`
+                        min-w-0
+                        truncate
+                        text-[10px]
+                        font-bold
+
+                        ${
+                          isSelected
+                            ? "text-emerald-700"
+                            : "text-slate-800"
+                        }
+                      `}
+                      title={stock.stock}
+                    >
+                      {stock.stock}
+                    </span>
+
+
+                    {/* SOURCE FIRST LETTER */}
+
+                    {sourceLetter && (
+
+                      <span
+                        className={`
+                          flex
+                          h-3.5
+                          w-3.5
+                          shrink-0
+                          items-center
+                          justify-center
+                          rounded
+                          text-[7px]
+                          font-extrabold
+
+                          ${getSourceClass(
+                            stock.source
+                          )}
+                        `}
+                        title={stock.source}
+                      >
+                        {sourceLetter}
+                      </span>
+
+                    )}
+
+                  </div>
+
 
                   {/* =================================================
                       PRICE
                   ================================================== */}
 
                   <span className="shrink-0 font-mono text-[9px] font-medium tabular-nums text-slate-600">
+
                     ₹{price.toFixed(1)}
+
                   </span>
+
 
                   {/* =================================================
                       PERCENTAGE
@@ -411,6 +541,7 @@ export default function LiveStockPanel({
                       text-[8px]
                       font-bold
                       tabular-nums
+
                       ${
                         isPos
                           ? "bg-emerald-100 text-emerald-700"
@@ -418,20 +549,22 @@ export default function LiveStockPanel({
                       }
                     `}
                   >
+
                     {isPos
                       ? "+"
                       : ""}
-                    {percentage.toFixed(
-                      1
-                    )}
-                    %
+
+                    {percentage.toFixed(1)}%
+
                   </span>
+
 
                   {/* =================================================
                       EXECUTE
                   ================================================== */}
 
                   {isSelected && (
+
                     <button
                       type="button"
                       disabled={isExecuting}
@@ -455,6 +588,7 @@ export default function LiveStockPanel({
                         shadow-sm
                         transition-all
                         active:scale-95
+
                         ${
                           isExecuting
                             ? "cursor-not-allowed bg-slate-400"
@@ -463,6 +597,7 @@ export default function LiveStockPanel({
                       `}
                       title={`Execute ${stock.stock}`}
                     >
+
                       <Zap
                         size={9}
                         strokeWidth={3}
@@ -476,8 +611,11 @@ export default function LiveStockPanel({
                       {isExecuting
                         ? "..."
                         : "Execute"}
+
                     </button>
+
                   )}
+
 
                   {/* =================================================
                       SKIP
@@ -494,17 +632,25 @@ export default function LiveStockPanel({
                     className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-slate-300 transition-all hover:bg-rose-500 hover:text-white"
                     title="Skip Stock"
                   >
+
                     <X
                       size={11}
                       strokeWidth={2.5}
                     />
+
                   </button>
+
                 </div>
+
               );
             })}
+
           </div>
+
         )}
+
       </div>
+
     </div>
   );
 }
