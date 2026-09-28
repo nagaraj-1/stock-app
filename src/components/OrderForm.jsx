@@ -114,7 +114,7 @@ export default function OrderFormModern({
           className="flex h-10 w-full items-center justify-center gap-1 rounded-xl bg-gradient-to-r from-violet-600 via-fuchsia-500 to-orange-400 text-[10px] font-black text-white shadow-md shadow-fuchsia-500/25 active:scale-95 transition-all"
         >
           <Zap size={10} className="fill-current" />
-          EXEC
+          {fields.user === "CUTIE" ? "KITE" : "GROWW"}
         </button>
 
       </div>
@@ -207,7 +207,7 @@ export default function OrderFormModern({
             className="group relative flex h-10 w-full items-center justify-center gap-1.5 overflow-hidden rounded-xl bg-gradient-to-r from-violet-600 via-fuchsia-500 to-orange-400 px-4 text-xs font-black tracking-wider text-white shadow-[0_4px_14px_rgba(217,70,239,0.3)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_7px_22px_rgba(217,70,239,0.4)] active:scale-95"
           >
             <Zap size={12} className="fill-current transition-transform duration-300 group-hover:scale-110" />
-            <span>EXECUTE ORDER</span>
+            <span>EXECUTE {fields.user === "CUTIE" ? "KITE" : "GROWW"}</span>
           </button>
         </div>
 

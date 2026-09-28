@@ -224,7 +224,7 @@ try {
   }, 500); // 5 seconds
 
   const cutieRes = await fetch(
-    `${API_CONFIG.CUTIE}/orders`,
+    `${API_CONFIG.CUTIE}/kite/orders`,
     {
       signal: controller.signal,
     }
@@ -431,7 +431,7 @@ try {
       const url = API_CONFIG[user1];
 
       const response = await fetch(
-        `${url}/cancel-order?order_id=${orderId}`,
+        `${url}/${user1 === "CUTIE" ? "kite/cancel-order" : "cancel-order"}?order_id=${encodeURIComponent(orderId)}`,
         {
           method: "POST",
         }
@@ -455,6 +455,7 @@ try {
 
   const executeOrder = async () => {
     const url = API_CONFIG[user];
+    const isKite = user === "CUTIE";
 
     try {
       setIsLoadingStock(true);
@@ -471,7 +472,7 @@ try {
       // ==========================================
       // 2. CANCEL PREVIOUS ORDER
       // ==========================================
-      if (previousOrder) {
+      if (!isKite && previousOrder) {
         console.log(
           "Cancelling previous order:",
           previousOrder.order_id
@@ -508,7 +509,7 @@ try {
       });
 
       const response = await fetch(
-        `${url}/buy?symbol=${symbol}&qty=${targetQty}&trigger_price=${targetPrice}`,
+        `${url}/${isKite ? "kite/buy" : "buy"}?${new URLSearchParams({ symbol, qty: targetQty, trigger_price: targetPrice })}`,
         {
           method: "POST",
         }
@@ -548,7 +549,7 @@ try {
         API_CONFIG[order.tableUser];
 
       const response = await fetch(
-        `${url}/sell?symbol=${order.tradingsymbol}&qty=${order.quantity}&price=${sellPrice}`,
+        `${url}/${order.tableUser === "CUTIE" ? "kite/sell" : "sell"}?${new URLSearchParams({ symbol: order.tradingsymbol, qty: order.quantity, price: sellPrice })}`,
         {
           method: "POST",
         }
