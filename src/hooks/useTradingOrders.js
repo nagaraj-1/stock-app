@@ -71,15 +71,44 @@ export function useTradingOrders() {
     useState(false);
 
   // AUTO TARGET PRICE
-  const calculatedTargetPrice = useMemo(() => {
-    return (
-      Math.round(
-        ((price / (1 + topPercent / 100)) *
-          (1 + targetPercent / 100)) *
-        100
-      ) / 100
-    );
-  }, [price, topPercent, targetPercent]);
+const [calculatedTargetPrice, setCalculatedTargetPrice] = useState(0);
+
+useEffect(() => {
+  const fetchTargetPrice = async () => {
+    if (!symbol || !targetPercent) {
+      setCalculatedTargetPrice(0);
+      return;
+    }
+
+    try {
+      const params = new URLSearchParams({
+        symbol,
+        percent: targetPercent,
+      });
+
+      const response = await fetch(
+        `https://stock.eatoo.in/api/groww/price-at-percent?${params.toString()}`
+      );
+
+      const data = await response.json();
+
+      if (!response.ok || data.success === false) {
+        throw new Error(data.detail || "Target price calculation failed");
+      }
+
+      setCalculatedTargetPrice(
+        Number(data.target_price) || 0
+      );
+
+    } catch (error) {
+      console.error("TARGET PRICE API ERROR:", error);
+      setCalculatedTargetPrice(0);
+    }
+  };
+
+  fetchTargetPrice();
+
+}, [symbol, targetPercent]);
 
   // FINAL TARGET PRICE
   const targetPrice =
