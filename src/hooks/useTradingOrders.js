@@ -383,7 +383,7 @@ try {
       const url = API_CONFIG[user1];
 
       const response = await fetch(
-        `${url}/live-track?order_id=${orderId}&sell_price=${sell_price}`,
+        `${url}/${user1 === "CUTIE" ? "kite/live-track" : "live-track"}?order_id=${orderId}&sell_price=${sell_price}`,
         {
           method: "GET",
         }
@@ -412,7 +412,7 @@ try {
     try {
 
       await fetch(
-        `${url}/stop-track?order_id=${orderId}`,
+        `${url}/${user1 === "CUTIE" ? "kite/stop-track" : "stop-track"}?order_id=${orderId}`,
         {
           method: "POST",
         }
