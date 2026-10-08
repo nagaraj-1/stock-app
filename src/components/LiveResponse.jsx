@@ -9,7 +9,7 @@ export default function LiveResponse({ user = "ALL" }) {
 
 
   const connectWebSocket = () => {
-    const WS_URL = user === "NAG" ? "ws://localhost:8000/ws" : "wss://stock1.eatoo.in/api/ws";
+    const WS_URL = user === "NAG" ? "wss://stock.eatoo.in/ws" : "wss://stock1.eatoo.in/api/ws";
 
     const ws = new WebSocket(WS_URL);
     wsRef.current = ws;
