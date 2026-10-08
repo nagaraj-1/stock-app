@@ -80,10 +80,67 @@ export default function OrdersView({
 }) {
   const [trackingOrders, setTrackingOrders] = useState({});
   const [sellPercentages, setSellPercentages] = useState({});
-
+const [sellPrices, setSellPrices] = useState({});
+const [loadingSellPrice, setLoadingSellPrice] = useState({});
   // ============================================================
   // DEPTH ANALYSIS STATE
   // ============================================================
+
+  const fetchSellPrice = async (order, percentage) => {
+  if (!order?.tradingsymbol || percentage === "") {
+    return;
+  }
+
+  const symbol = order.tradingsymbol;
+
+  try {
+    setLoadingSellPrice((prev) => ({
+      ...prev,
+      [order.order_id]: true,
+    }));
+
+    const params = new URLSearchParams({
+      symbol,
+      percent: percentage,
+    });
+
+    const response = await fetch(
+      `${API_CONFIG.STOCK}/price-at-percent?${params.toString()}`
+    );
+
+    const data = await response.json();
+
+    if (!response.ok || data.success === false) {
+      throw new Error(
+        data.detail || "Sell price calculation failed"
+      );
+    }
+
+    const calculatedPrice =
+      Number(data.target_price) || 0;
+
+    setSellPrices((prev) => ({
+      ...prev,
+      [order.order_id]: calculatedPrice,
+    }));
+
+  } catch (error) {
+    console.error(
+      `SELL PRICE API ERROR: ${symbol}`,
+      error
+    );
+
+    setSellPrices((prev) => ({
+      ...prev,
+      [order.order_id]: 0,
+    }));
+  } finally {
+    setLoadingSellPrice((prev) => ({
+      ...prev,
+      [order.order_id]: false,
+    }));
+  }
+};
 
   const [depthAnalysis, setDepthAnalysis] = useState({});
 
@@ -314,13 +371,16 @@ export default function OrdersView({
 
               const buyPercentage = 15.55;
 
-              const sellPercentage =
-                sellPercentages[order.order_id] ?? 16.8;
+        const sellPercentage =
+  sellPercentages[order.order_id] ?? 16.8;
 
-              const sellPrice = (
-                (price / (1 + buyPercentage / 100)) *
-                (1 + sellPercentage / 100)
-              ).toFixed(2);
+const apiSellPrice =
+  sellPrices[order.order_id];
+
+const sellPrice =
+  apiSellPrice !== undefined
+    ? Number(apiSellPrice).toFixed(2)
+    : "0.00";
 
               // ==================================================
               // DEPTH DATA
@@ -616,17 +676,34 @@ export default function OrdersView({
                             type="number"
                             step="0.1"
                             value={sellPercentage}
-                            onChange={(e) =>
-                              setSellPercentages(
-                                (prev) => ({
-                                  ...prev,
-                                  [order.order_id]:
-                                    Number(
-                                      e.target.value
-                                    ),
-                                })
-                              )
-                            }
+                            onChange={(e) => {
+  const value = e.target.value;
+
+  setSellPercentages((prev) => ({
+    ...prev,
+    [order.order_id]: value,
+  }));
+}}
+
+onBlur={(e) => {
+  const value = e.target.value;
+
+  if (value !== "") {
+    fetchSellPrice(order, value);
+  }
+}}
+
+onKeyDown={(e) => {
+  if (e.key === "Enter") {
+    const value = e.currentTarget.value;
+
+    if (value !== "") {
+      fetchSellPrice(order, value);
+    }
+
+    e.currentTarget.blur();
+  }
+}}
                             className="w-16 rounded-md border border-slate-200 bg-slate-50/50 py-0.5 pr-2.5 text-center text-[10px] font-bold text-slate-700 outline-none transition-all hover:border-slate-300 focus:border-indigo-500 focus:bg-white focus:ring-1 focus:ring-indigo-500/20"
                           />
 
@@ -719,7 +796,7 @@ export default function OrdersView({
                             onTrackOrder(
                               order.tableUser,
                               order.order_id,
-                              sellPrice
+                              sellPercentage
                             );
                           }}
                           className="rounded-lg border border-indigo-100 bg-indigo-50 p-1.5 text-indigo-600 shadow-sm transition-all hover:border-indigo-600 hover:bg-indigo-600 hover:text-white active:scale-95"

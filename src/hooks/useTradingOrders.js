@@ -403,6 +403,7 @@ try {
     user1,
     orderId, sell_price
   ) => {
+    console.log("SELL",sell_price)
     try {
       console.log("AI MODE TRACK:", {
         user1,
@@ -412,7 +413,7 @@ try {
       const url = API_CONFIG[user1];
 
       const response = await fetch(
-        `${url}/${user1 === "CUTIE" ? "kite/live-track" : "live-track"}?order_id=${orderId}&sell_price=${sell_price}`,
+        `${url}/${user1 === "CUTIE" ? "kite/live-track" : "live-track"}?order_id=${orderId}&sell_percentage=${sell_price}`,
         {
           method: "GET",
         }

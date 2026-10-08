@@ -151,7 +151,7 @@ export default function LiveStockPanel({
 
     const interval = setInterval(
       fetchStocks,
-      30000
+      45000
     );
 
     return () => {
